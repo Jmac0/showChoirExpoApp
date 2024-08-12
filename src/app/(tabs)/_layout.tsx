@@ -23,6 +23,42 @@ const TabsLayout = () => {
           ),
         }}
       />
+      <Tabs.Screen
+        name="QrCode"
+        options={{
+          title: "Membership Card",
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon
+              name={focused ? "qr-code" : "qr-code-outline"}
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="Notifications"
+        options={{
+          title: "Notifications",
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon
+              name={focused ? "bulb" : "bulb-outline"}
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="Resources"
+        options={{
+          title: "Resources",
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon
+              name={focused ? "musical-note" : "musical-note-outline"}
+              color={color}
+            />
+          ),
+        }}
+      />
     </Tabs>
   );
 };

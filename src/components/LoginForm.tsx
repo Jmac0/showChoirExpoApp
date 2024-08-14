@@ -1,28 +1,35 @@
 import { View, Text, TextInput, Button } from "react-native";
 import React from "react";
 
-const LoginForm = () => {
+type LoginFormProps = {
+  handleChange: (name: string, value: string) => void;
+  handleSubmit: () => void;
+};
+
+const LoginForm = ({ handleChange, handleSubmit }) => {
   return (
-    <View className="bg-gray-900">
+    <View className="px-8 py-10">
       <View className="flex-col">
-        <Text>Email</Text>
+        <Text className="text-xl color-slate-100">Email</Text>
         <TextInput
-          className="border border-gray-300 rounded-md px-4 py-2 mt-4"
+          className="mb-4 mt-4 rounded-md border border-gray-300 bg-white px-4 py-2"
           placeholder="Username"
+          onChangeText={(value) => handleChange("email", value)}
         />
       </View>
       <View className="">
-        <Text>Password</Text>
+        <Text className="text-xl color-slate-100">Password</Text>
         <TextInput
-          className="border border-gray-300 rounded-md px-4 py-2 mt-4"
+          className="mb-5 mt-4 rounded-md border border-gray-300 bg-white px-4 py-2"
           placeholder="Password"
           secureTextEntry
+          onChangeText={(value) => handleChange("password", value)}
         />
       </View>
       <Button
         title="Login"
         onPress={() => {
-          // Handle login logic here
+          handleSubmit();
         }}
       />
     </View>

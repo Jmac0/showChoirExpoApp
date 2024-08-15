@@ -1,0 +1,42 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.8	//
+Ionicons	src/components/TabBarIcon.tsx	/^import Ionicons from "@expo\/vector-icons\/Ionicons";$/;"	I
+Layout	src/app/_layout.tsx	/^export default function Layout() {$/;"	f
+Login	src/app/login.tsx	/^export default function Login() {$/;"	f
+LoginForm	src/app/login.tsx	/^import LoginForm from "@\/components\/LoginForm";$/;"	I
+LoginFormProps	src/components/LoginForm.tsx	/^type LoginFormProps = {$/;"	t
+React	src/app/(tabs)/Notifications.tsx	/^import React from "react";$/;"	I
+React	src/app/(tabs)/QrCode.tsx	/^import React from "react";$/;"	I
+React	src/app/(tabs)/Resources.tsx	/^import React from "react";$/;"	I
+React	src/app/(tabs)/_layout.tsx	/^import React from "react";$/;"	I
+React	src/app/(tabs)/index.tsx	/^import React from "react";$/;"	I
+React	src/app/login.tsx	/^import React, { useState } from "react";$/;"	I
+React	src/components/LoginForm.tsx	/^import React from "react";$/;"	I
+TabBarIcon	src/components/TabBarIcon.tsx	/^export function TabBarIcon({$/;"	f
+axios	src/app/login.tsx	/^import axios from "axios";$/;"	I
+email	src/app/login.tsx	/^    email: "",$/;"	m
+handleChange	src/components/LoginForm.tsx	/^  handleChange: (name: string, value: string) => void;$/;"	m
+handleSubmit	src/components/LoginForm.tsx	/^          handleSubmit();$/;"	m
+handleSubmit	src/components/LoginForm.tsx	/^  handleSubmit: () => void;$/;"	m
+headerStyle	src/app/(tabs)/_layout.tsx	/^        headerStyle: { backgroundColor: "hotpink" },$/;"	m
+if	src/app/(tabs)/_layout.tsx	/^  if (!session) {$/;"	m
+password	src/app/login.tsx	/^    password: "",$/;"	m
+return	src/app/(tabs)/Notifications.tsx	/^  return ($/;"	m
+return	src/app/(tabs)/QrCode.tsx	/^  return ($/;"	m
+return	src/app/(tabs)/Resources.tsx	/^  return ($/;"	m
+return	src/app/(tabs)/_layout.tsx	/^  return ($/;"	m
+return	src/app/(tabs)/index.tsx	/^  return ($/;"	m
+return	src/app/_layout.tsx	/^  return ($/;"	m
+return	src/app/login.tsx	/^  return ($/;"	m
+return	src/components/LoginForm.tsx	/^  return ($/;"	m
+setFromData	src/app/login.tsx	/^    setFromData({ ...formData, [key]: value });$/;"	m
+tabBarActiveTintColor	src/app/(tabs)/_layout.tsx	/^        tabBarActiveTintColor: "hotpink",$/;"	m
+tabBarIcon	src/app/(tabs)/_layout.tsx	/^          tabBarIcon: ({ color, focused }) => ($/;"	m
+title	src/app/(tabs)/_layout.tsx	/^          title: "Home",$/;"	m
+title	src/app/(tabs)/_layout.tsx	/^          title: "Membership Card",$/;"	m
+title	src/app/(tabs)/_layout.tsx	/^          title: "Notifications",$/;"	m
+title	src/app/(tabs)/_layout.tsx	/^          title: "Resources",$/;"	m

@@ -1,10 +1,13 @@
 import LoginForm from "@/components/LoginForm";
-import { Link } from "expo-router";
+import axios from "axios";
+import { Link, Redirect, router, useRouter } from "expo-router";
 import React, { useState } from "react";
 import { Button, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
+import { API_URL } from "@env";
 export default function Login() {
+  const router = useRouter();
+
   const [formData, setFromData] = useState({
     email: "",
     password: "",
@@ -14,7 +17,15 @@ export default function Login() {
     setFromData({ ...formData, [key]: value });
   };
   const handleSubmit = () => {
-    console.log(formData);
+    axios
+      .post(`${API_URL}`, formData)
+      .then((res) => {
+        console.log(res.data);
+        router.push("/(tabs)");
+      })
+      .catch((error) => {
+        console.log(error);
+      });
   };
   return (
     <View className="bg-lightBlack flex-1 pt-36">

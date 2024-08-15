@@ -12,14 +12,16 @@ const LoginForm = ({ handleChange, handleSubmit }) => {
       <View className="flex-col">
         <Text className="text-xl color-slate-100">Email</Text>
         <TextInput
+          keyboardType="email-address"
+          autoCapitalize="none"
           className="mb-4 mt-4 rounded-md border border-gray-300 bg-white px-4 py-2"
-          placeholder="Username"
           onChangeText={(value) => handleChange("email", value)}
         />
       </View>
       <View className="">
-        <Text className="text-xl color-slate-100">Password</Text>
+        <Text className="pt-5 text-xl color-slate-100">Password</Text>
         <TextInput
+          autoCapitalize="none"
           className="mb-5 mt-4 rounded-md border border-gray-300 bg-white px-4 py-2"
           placeholder="Password"
           secureTextEntry

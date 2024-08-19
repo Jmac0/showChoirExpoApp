@@ -5,9 +5,9 @@ import { TabBarIcon } from "@/components/TabBarIcon";
 
 const session = false;
 const TabsLayout = () => {
-  if (!session) {
-    return <Redirect href="/login" />;
-  }
+  // if (!session) {
+  //   return <Redirect href="/login" />;
+  // }
   return (
     <Tabs
       screenOptions={{

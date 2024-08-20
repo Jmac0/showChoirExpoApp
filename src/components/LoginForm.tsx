@@ -3,10 +3,10 @@ import React from "react";
 
 type LoginFormProps = {
   handleChange: (name: string, value: string) => void;
-  handleSubmit: () => void;
+  handleLogin: () => void;
 };
 
-const LoginForm = ({ handleChange, handleSubmit }) => {
+const LoginForm = ({ handleChange, handleLogin }) => {
   return (
     <View className="px-8 py-10">
       <View className="flex-col">
@@ -31,7 +31,7 @@ const LoginForm = ({ handleChange, handleSubmit }) => {
       <Button
         title="Login"
         onPress={() => {
-          handleSubmit();
+          handleLogin();
         }}
       />
     </View>

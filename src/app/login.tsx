@@ -1,36 +1,37 @@
 import LoginForm from "@/components/LoginForm";
 import axios from "axios";
 import { Link, Redirect, router, useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button, Text, TextInput, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { API_URL } from "@env";
-export default function Login() {
-  const router = useRouter();
 
-  const [formData, setFromData] = useState({
+import { useAuth } from "@/contexts/authContext";
+export default function Login() {
+  const { signIn, session } = useAuth();
+  const router = useRouter();
+  const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
 
+  useEffect(() => {
+    if (session) {
+      console.log(session);
+      router.push("/");
+    }
+  }, [session]);
+
   const handleChange = (key: string, value: string) => {
-    setFromData({ ...formData, [key]: value });
+    setFormData({ ...formData, [key]: value });
   };
-  const handleSubmit = () => {
-    axios
-      .post(`${API_URL}`, formData)
-      .then((res) => {
-        console.log(res.data);
-        router.push("/(tabs)");
-      })
-      .catch((error) => {
-        console.log(error);
-      });
+
+  const handleLogin = () => {
+    signIn(formData);
   };
+
   return (
-    <View className="bg-lightBlack flex-1 pt-36">
+    <View className="flex-1 bg-lightBlack pt-36">
       <Text className="mt-8 text-center text-4xl font-bold">Login</Text>
-      <LoginForm handleChange={handleChange} handleSubmit={handleSubmit} />
+      <LoginForm handleChange={handleChange} handleLogin={handleLogin} />
     </View>
   );
 }

@@ -1,13 +1,27 @@
+import axios from "axios";
 import {
   useContext,
   createContext,
   useState,
   type PropsWithChildren,
 } from "react";
+import { API_URL } from "@env";
+import { router } from "expo-router";
 
-const AuthContext = createContext({
+// Define the structure of session data
+interface SessionData {
+  refreshToken: string;
+  accessToken: string;
+}
+
+interface AuthContextType {
+  signIn: (formData: { email: string; password: string }) => void;
+  session: SessionData | null;
+}
+
+const AuthContext = createContext<AuthContextType>({
   signIn: () => null,
-  name: "",
+  session: null,
 });
 
 // This hook can be used to access the user info.
@@ -15,7 +29,7 @@ export function useAuth() {
   const value = useContext(AuthContext);
   if (process.env.NODE_ENV !== "production") {
     if (!value) {
-      throw new Error("useSession must be wrapped in a <SessionProvider />");
+      throw new Error("useAuth must be wrapped in a <AuthProvider />");
     }
   }
 
@@ -23,15 +37,23 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }: PropsWithChildren) {
-  const signIn = () => {
-    console.log("Sign in");
+  const [session, setSession] = useState<SessionData | null>(null);
+  console.log(session);
+  const signIn = async (formData: { email: string; password: string }) => {
+    try {
+      const res = await axios.post(`${API_URL}`, formData);
+      setSession(res.data); // Ensure res.data matches SessionData interface
+    } catch (error) {
+      console.error("Error during sign-in:", error);
+      // Optionally handle errors more gracefully here
+    }
   };
 
   return (
     <AuthContext.Provider
       value={{
         signIn,
-        name: "Jimbob McAllister",
+        session,
       }}
     >
       {children}

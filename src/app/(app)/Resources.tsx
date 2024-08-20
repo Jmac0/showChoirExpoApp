@@ -3,10 +3,9 @@ import React from "react";
 import { useAuth } from "@/contexts/authContext";
 
 const Resources = () => {
-  const { name } = useAuth();
   return (
     <View>
-      <Text>Resources for {name}</Text>
+      <Text>Resources for</Text>
     </View>
   );
 };

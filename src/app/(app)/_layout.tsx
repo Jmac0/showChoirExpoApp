@@ -5,10 +5,9 @@ import { TabBarIcon } from "@/components/TabBarIcon";
 import { useAuth } from "@/contexts/authContext";
 const TabsLayout = () => {
   const { signIn, session } = useAuth();
-  const router = useRouter();
-  if (!session) {
-    return <Redirect href="/login" />;
-  }
+  // if (!session) {
+  //   return <Redirect href="/login" />;
+  // }
 
   return (
     <Tabs

@@ -5,6 +5,7 @@ import React, { useEffect, useState } from "react";
 import { Button, Text, TextInput, View } from "react-native";
 
 import { useAuth } from "@/contexts/authContext";
+
 export default function Login() {
   const { signIn, session } = useAuth();
   const router = useRouter();

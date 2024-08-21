@@ -16,11 +16,13 @@ interface SessionData {
 
 interface AuthContextType {
   signIn: (formData: { email: string; password: string }) => void;
+  signOut: () => void;
   session: SessionData | null;
 }
 
 const AuthContext = createContext<AuthContextType>({
   signIn: () => null,
+  signOut: () => null,
   session: null,
 });
 
@@ -40,8 +42,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<SessionData | null>(null);
   console.log(session);
   const signIn = async (formData: { email: string; password: string }) => {
+    let { email, password } = formData;
+    email = email.trim().toLowerCase();
     try {
-      const res = await axios.post(`${API_URL}`, formData);
+      const res = await axios.post(`${API_URL}`, { email, password });
       setSession(res.data); // Ensure res.data matches SessionData interface
     } catch (error) {
       console.error("Error during sign-in:", error);
@@ -49,10 +53,16 @@ export function AuthProvider({ children }: PropsWithChildren) {
     }
   };
 
+  const signOut = () => {
+    setSession(null);
+    router.push("/login");
+  };
+
   return (
     <AuthContext.Provider
       value={{
         signIn,
+        signOut,
         session,
       }}
     >

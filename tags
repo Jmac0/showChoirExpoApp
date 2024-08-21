@@ -4,6 +4,7 @@
 !_TAG_PROGRAM_NAME	Exuberant Ctags	//
 !_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
 !_TAG_PROGRAM_VERSION	5.8	//
+AuthContextType	src/contexts/authContext.tsx	/^interface AuthContextType {$/;"	i
 AuthProvider	src/contexts/authContext.tsx	/^export function AuthProvider({ children }: PropsWithChildren) {$/;"	f
 Ionicons	src/components/TabBarIcon.tsx	/^import Ionicons from "@expo\/vector-icons\/Ionicons";$/;"	I
 Layout	src/app/_layout.tsx	/^export default function Layout() {$/;"	f
@@ -16,20 +17,24 @@ React	src/app/(app)/QrCode.tsx	/^import React from "react";$/;"	I
 React	src/app/(app)/Resources.tsx	/^import React from "react";$/;"	I
 React	src/app/(app)/_layout.tsx	/^import React from "react";$/;"	I
 React	src/app/(app)/index.tsx	/^import React from "react";$/;"	I
-React	src/app/login.tsx	/^import React, { useState } from "react";$/;"	I
+React	src/app/login.tsx	/^import React, { useEffect, useState } from "react";$/;"	I
 React	src/components/LoginForm.tsx	/^import React from "react";$/;"	I
+SessionData	src/contexts/authContext.tsx	/^interface SessionData {$/;"	i
 TabBarIcon	src/components/TabBarIcon.tsx	/^export function TabBarIcon({$/;"	f
+accessToken	src/contexts/authContext.tsx	/^  accessToken: string;$/;"	m
 axios	src/app/login.tsx	/^import axios from "axios";$/;"	I
+axios	src/contexts/authContext.tsx	/^import axios from "axios";$/;"	I
 email	src/app/login.tsx	/^    email: "",$/;"	m
 handleChange	src/components/LoginForm.tsx	/^  handleChange: (name: string, value: string) => void;$/;"	m
-handleSubmit	src/components/LoginForm.tsx	/^          handleSubmit();$/;"	m
-handleSubmit	src/components/LoginForm.tsx	/^  handleSubmit: () => void;$/;"	m
+handleLogin	src/components/LoginForm.tsx	/^          handleLogin();$/;"	m
+handleLogin	src/components/LoginForm.tsx	/^  handleLogin: () => void;$/;"	m
 headerStyle	src/app/(app)/_layout.tsx	/^        headerStyle: { backgroundColor: "hotpink" },$/;"	m
+if	src/app/(app)/_layout.tsx	/^  if (!session) {$/;"	m
+if	src/app/login.tsx	/^    if (session) {$/;"	m
 if	src/contexts/authContext.tsx	/^    if (!value) {$/;"	m
 if	src/contexts/authContext.tsx	/^  if (process.env.NODE_ENV !== "production") {$/;"	m
-name	src/contexts/authContext.tsx	/^        name: "Jimbob McAllister",$/;"	m
-name	src/contexts/authContext.tsx	/^  name: "",$/;"	m
 password	src/app/login.tsx	/^    password: "",$/;"	m
+refreshToken	src/contexts/authContext.tsx	/^  refreshToken: string;$/;"	m
 return	src/app/(app)/Notifications.tsx	/^  return ($/;"	m
 return	src/app/(app)/QrCode.tsx	/^  return ($/;"	m
 return	src/app/(app)/Resources.tsx	/^  return ($/;"	m
@@ -39,8 +44,13 @@ return	src/app/_layout.tsx	/^  return ($/;"	m
 return	src/app/login.tsx	/^  return ($/;"	m
 return	src/components/LoginForm.tsx	/^  return ($/;"	m
 return	src/contexts/authContext.tsx	/^  return ($/;"	m
-setFromData	src/app/login.tsx	/^    setFromData({ ...formData, [key]: value });$/;"	m
+session	src/contexts/authContext.tsx	/^  session: SessionData | null;$/;"	m
+session	src/contexts/authContext.tsx	/^  session: null,$/;"	m
+setFormData	src/app/login.tsx	/^    setFormData({ ...formData, [key]: value });$/;"	m
+setSession	src/contexts/authContext.tsx	/^      setSession(res.data); \/\/ Ensure res.data matches SessionData interface$/;"	m
+signIn	src/app/login.tsx	/^    signIn(formData);$/;"	m
 signIn	src/contexts/authContext.tsx	/^  signIn: () => null,$/;"	m
+signIn	src/contexts/authContext.tsx	/^  signIn: (formData: { email: string; password: string }) => void;$/;"	m
 tabBarActiveTintColor	src/app/(app)/_layout.tsx	/^        tabBarActiveTintColor: "hotpink",$/;"	m
 tabBarIcon	src/app/(app)/_layout.tsx	/^          tabBarIcon: ({ color, focused }) => ($/;"	m
 title	src/app/(app)/_layout.tsx	/^          title: "Home",$/;"	m
@@ -48,3 +58,4 @@ title	src/app/(app)/_layout.tsx	/^          title: "Membership Card",$/;"	m
 title	src/app/(app)/_layout.tsx	/^          title: "Notifications",$/;"	m
 title	src/app/(app)/_layout.tsx	/^          title: "Resources",$/;"	m
 useAuth	src/contexts/authContext.tsx	/^export function useAuth() {$/;"	f
+useEffect	src/app/login.tsx	/^  useEffect(() => {$/;"	m

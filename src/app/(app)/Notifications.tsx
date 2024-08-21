@@ -1,7 +1,7 @@
-import { View, Text } from "react-native";
-import React from "react";
+import { View, Text } from 'react-native';
+import React from 'react';
 
-const Notifications = () => {
+const notifications = () => {
   return (
     <View>
       <Text>Notifications</Text>
@@ -9,4 +9,4 @@ const Notifications = () => {
   );
 };
 
-export default Notifications;
+export default notifications;

@@ -1,12 +1,12 @@
-import { View, Text, TextInput, Button } from "react-native";
-import React from "react";
+import { View, Text, TextInput, Button } from 'react-native';
+import React from 'react';
 
 type LoginFormProps = {
   handleChange: (name: string, value: string) => void;
   handleLogin: () => void;
 };
 
-const LoginForm = ({ handleChange, handleLogin }) => {
+const LoginForm = ({ handleChange, handleLogin }: LoginFormProps) => {
   return (
     <View className="px-8 py-10">
       <View className="flex-col">
@@ -15,7 +15,7 @@ const LoginForm = ({ handleChange, handleLogin }) => {
           keyboardType="email-address"
           autoCapitalize="none"
           className="mb-4 mt-4 rounded-md border border-gray-300 bg-white px-4 py-2"
-          onChangeText={(value) => handleChange("email", value)}
+          onChangeText={(value) => handleChange('email', value)}
         />
       </View>
       <View className="">
@@ -25,7 +25,7 @@ const LoginForm = ({ handleChange, handleLogin }) => {
           className="mb-5 mt-4 rounded-md border border-gray-300 bg-white px-4 py-2"
           placeholder="Password"
           secureTextEntry
-          onChangeText={(value) => handleChange("password", value)}
+          onChangeText={(value) => handleChange('password', value)}
         />
       </View>
       <Button

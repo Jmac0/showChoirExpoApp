@@ -1,8 +1,7 @@
-import { View, Text } from "react-native";
-import React from "react";
-import { useAuth } from "@/contexts/authContext";
+import { View, Text } from 'react-native';
+import React from 'react';
 
-const Resources = () => {
+const resources = () => {
   return (
     <View>
       <Text>Resources for</Text>
@@ -10,4 +9,4 @@ const Resources = () => {
   );
 };
 
-export default Resources;
+export default resources;

@@ -1,7 +1,7 @@
-import { View, Text } from "react-native";
-import React from "react";
+import { View, Text } from 'react-native';
+import React from 'react';
 
-const QrCode = () => {
+const qrcode = () => {
   return (
     <View>
       <Text>QrCode</Text>
@@ -9,4 +9,4 @@ const QrCode = () => {
   );
 };
 
-export default QrCode;
+export default qrcode;

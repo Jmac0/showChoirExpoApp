@@ -1,6 +1,6 @@
-import { AuthProvider } from "@/contexts/authContext";
-import "../global.css";
-import { Slot, Stack } from "expo-router";
+import { AuthProvider } from '@/contexts/authContext';
+import '../global.css';
+import { Stack } from 'expo-router';
 
 export default function Layout() {
   return (

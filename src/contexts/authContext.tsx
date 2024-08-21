@@ -1,12 +1,12 @@
-import axios from "axios";
+import axios from 'axios';
 import {
   useContext,
   createContext,
   useState,
   type PropsWithChildren,
-} from "react";
-import { API_URL } from "@env";
-import { router } from "expo-router";
+} from 'react';
+import { API_URL } from '@env';
+import { router } from 'expo-router';
 
 // Define the structure of session data
 interface SessionData {
@@ -29,9 +29,9 @@ const AuthContext = createContext<AuthContextType>({
 // This hook can be used to access the user info.
 export function useAuth() {
   const value = useContext(AuthContext);
-  if (process.env.NODE_ENV !== "production") {
+  if (process.env.NODE_ENV !== 'production') {
     if (!value) {
-      throw new Error("useAuth must be wrapped in a <AuthProvider />");
+      throw new Error('useAuth must be wrapped in a <AuthProvider />');
     }
   }
 
@@ -48,14 +48,14 @@ export function AuthProvider({ children }: PropsWithChildren) {
       const res = await axios.post(`${API_URL}`, { email, password });
       setSession(res.data); // Ensure res.data matches SessionData interface
     } catch (error) {
-      console.error("Error during sign-in:", error);
+      console.error('Error during sign-in:', error);
       // Optionally handle errors more gracefully here
     }
   };
 
   const signOut = () => {
     setSession(null);
-    router.push("/login");
+    router.push('/login');
   };
 
   return (

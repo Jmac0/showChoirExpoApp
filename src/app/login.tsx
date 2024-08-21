@@ -1,25 +1,24 @@
-import LoginForm from "@/components/LoginForm";
-import axios from "axios";
-import { Link, Redirect, router, useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
-import { Button, Text, TextInput, View } from "react-native";
+import LoginForm from '@/components/LoginForm';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { Text, View } from 'react-native';
 
-import { useAuth } from "@/contexts/authContext";
+import { useAuth } from '@/contexts/authContext';
 
 export default function Login() {
   const { signIn, session } = useAuth();
   const router = useRouter();
   const [formData, setFormData] = useState({
-    email: "",
-    password: "",
+    email: '',
+    password: '',
   });
 
   useEffect(() => {
     if (session) {
       console.log(session);
-      router.push("/");
+      router.push('/');
     }
-  }, [session]);
+  }, [session, router]);
 
   const handleChange = (key: string, value: string) => {
     setFormData({ ...formData, [key]: value });

@@ -16,6 +16,9 @@
       ]
     ],
     "name": "showChoirExpoApp",
-    "slug": "showChoirExpoApp"
+    "slug": "showChoirExpoApp",
+    "ios": {
+      "bundleIdentifier": "co.uk.show-choir.showchoir"
+    }
   }
 }

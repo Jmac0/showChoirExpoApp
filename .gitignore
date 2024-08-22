@@ -10,5 +10,6 @@ npm-debug.*
 *.orig.*
 web-build/
 tags
+*.env*
 # macOS
 .DS_Store

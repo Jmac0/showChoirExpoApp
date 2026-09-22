@@ -5,7 +5,7 @@ const IndexComponent: React.FC = () => {
   const { signOut } = useAuth();
 
   return (
-    <View>
+    <View className="flex-1 items-center bg-lightBlack pt-10">
       <Text>index</Text>
       <Button title="Logout" onPress={() => signOut()} />
     </View>

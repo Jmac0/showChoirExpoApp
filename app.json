@@ -13,7 +13,9 @@
         {
           "origin": "https://n"
         }
-      ]
+      ],
+      "expo-secure-store",
+      "expo-font"
     ],
     "name": "showChoirExpoApp",
     "slug": "showChoirExpoApp",

@@ -1,13 +1,9 @@
 {
   "compilerOptions": {
     "strict": true,
-    "baseUrl": "./",
     "paths": {
       "@/*": [
         "./src/*"
-      ],
-      "@env": [
-        "node_modules/react-native-dotenv"
       ]
     }
   },
@@ -15,6 +11,7 @@
   "include": [
     "global.d.ts",
     "**/*.ts",
-    "**/*.tsx"
+    "**/*.tsx",
+    "nativewind-env.d.ts"
   ]
 }

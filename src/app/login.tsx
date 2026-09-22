@@ -12,10 +12,11 @@ export default function Login() {
     email: '',
     password: '',
   });
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (session) {
-      console.log(session);
       router.push('/');
     }
   }, [session, router]);
@@ -24,14 +25,25 @@ export default function Login() {
     setFormData({ ...formData, [key]: value });
   };
 
-  const handleLogin = () => {
-    signIn(formData);
+  const handleLogin = async () => {
+    setError(null);
+    setIsSubmitting(true);
+    const result = await signIn(formData);
+    setIsSubmitting(false);
+    if (!result.success) {
+      setError(result.error ?? 'Unable to log in. Please try again.');
+    }
   };
 
   return (
     <View className="flex-1 bg-lightBlack pt-36">
       <Text className="mt-8 text-center text-4xl font-bold">Login</Text>
-      <LoginForm handleChange={handleChange} handleLogin={handleLogin} />
+      <LoginForm
+        handleChange={handleChange}
+        handleLogin={handleLogin}
+        error={error}
+        isSubmitting={isSubmitting}
+      />
     </View>
   );
 }

@@ -35,6 +35,7 @@ const tokenStorage = {
 export interface MemberProfile {
   email: string;
   first_name: string;
+  last_name: string;
   active_member: boolean;
   active_mandate: boolean;
   flexi_sessions: number;

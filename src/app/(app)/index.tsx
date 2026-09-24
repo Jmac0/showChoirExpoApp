@@ -19,6 +19,7 @@ import { View, Text, Pressable } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 
 import { useAuth } from '@/contexts/authContext';
+import { FlexiSessionsRing } from '@/components/FlexiSessionsRing';
 
 const SIGN_IN_HINT_DISMISSED_KEY = 'qrSignInHintDismissed';
 
@@ -65,6 +66,9 @@ const IndexComponent = () => {
           <Text className="mt-4 text-xl text-white">
             {getGreeting()} {profile.first_name}
           </Text>
+          <View className="mt-6 items-center justify-center">
+            <FlexiSessionsRing remaining={profile.flexi_sessions} />
+          </View>
           <View className="mt-8 items-center justify-center rounded-lg bg-white p-8">
             <QRCode value={qrValue} size={220} />
           </View>

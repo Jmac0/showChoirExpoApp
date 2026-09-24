@@ -58,17 +58,19 @@ const IndexComponent = () => {
 
   return (
     <View className="flex-1 items-center bg-lightBlack pt-10">
-      <Text className="text-center text-3xl font-bold text-white">
-        Membership Card
-      </Text>
       {profile?.email ? (
         <>
-          <Text className="mt-4 text-xl text-white">
+          <Text className="mt-4 text-2xl font-bold text-lightGold">
             {getGreeting()} {profile.first_name}
           </Text>
-          <View className="mt-6 items-center justify-center">
-            <FlexiSessionsRing remaining={profile.flexi_sessions} />
-          </View>
+          {profile.membership_type === 'flexi' ? (
+            <View className="mt-6 items-center justify-center">
+              <FlexiSessionsRing remaining={profile.flexi_sessions} />
+            </View>
+          ) : null}
+          <Text className="mt-6 text-center text-xl font-bold text-lightGold">
+            Membership Card
+          </Text>
           <View className="mt-8 items-center justify-center rounded-lg bg-white p-8">
             <QRCode value={qrValue} size={220} />
           </View>

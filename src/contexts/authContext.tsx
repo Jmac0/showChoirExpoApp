@@ -10,7 +10,7 @@ import {
 } from 'react';
 import { Platform } from 'react-native';
 
-const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
+import { api } from '@/lib/api';
 
 const ACCESS_TOKEN_KEY = 'accessToken';
 const REFRESH_TOKEN_KEY = 'refreshToken';
@@ -86,8 +86,8 @@ export function useAuth() {
 }
 
 async function fetchProfile(accessToken: string) {
-  const res = await axios.get<MemberProfile>(
-    `${BASE_URL}/api/member-resources/get-profile`,
+  const res = await api.get<MemberProfile>(
+    '/api/member-resources/get-profile',
     { headers: { Authorization: `Bearer ${accessToken}` } }
   );
   return res.data;
@@ -128,10 +128,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
     const password = formData.password.trim();
 
     try {
-      const { data } = await axios.post<SessionData>(
-        `${BASE_URL}/api/auth/appLogin`,
-        { email, password }
-      );
+      const { data } = await api.post<SessionData>('/api/auth/appLogin', {
+        email,
+        password,
+      });
 
       const memberProfile = await fetchProfile(data.accessToken);
 
@@ -143,10 +143,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
       return { success: true };
     } catch (error) {
-      const message = axios.isAxiosError(error)
-        ? (error.response?.data?.message ??
-          'Unable to log in. Please try again.')
-        : 'Unable to log in. Please try again.';
+      let message = 'Unable to log in. Please try again.';
+      if (axios.isAxiosError(error)) {
+        message = error.response
+          ? (error.response.data?.message ?? message)
+          : // No response at all - timed out or the server couldn't be reached.
+            "Can't reach the server. Check your connection and try again.";
+      }
       return { success: false, error: message };
     }
   };
@@ -162,8 +165,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const refreshAccessToken = async () => {
     if (!session) return null;
     try {
-      const { data } = await axios.post<{ accessToken: string }>(
-        `${BASE_URL}/api/auth/refresh`,
+      const { data } = await api.post<{ accessToken: string }>(
+        '/api/auth/refresh',
         { refreshToken: session.refreshToken }
       );
       await tokenStorage.setItem(ACCESS_TOKEN_KEY, data.accessToken);

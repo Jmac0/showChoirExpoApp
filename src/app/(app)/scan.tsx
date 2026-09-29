@@ -14,9 +14,7 @@ import { Pressable, Text, View } from 'react-native';
 
 import { ScanResultToast, type ScanToast } from '@/components/ScanResultToast';
 import { useAuth } from '@/contexts/authContext';
-
-// Website API address, from the app's .env files.
-const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
+import { api } from '@/lib/api';
 
 // How long a result stays on screen before the scanner accepts the next code.
 const RESULT_DISPLAY_MS = 5000;
@@ -119,8 +117,8 @@ const ScanScreen = () => {
   // throws if the request fails (network down, server error, etc).
   const checkIn = async (email: string) => {
     const post = (token: string) =>
-      axios.post<CheckInResponse>(
-        `${BASE_URL}/api/member-resources/check-in-member`,
+      api.post<CheckInResponse>(
+        '/api/member-resources/check-in-member',
         { email },
         { headers: { Authorization: `Bearer ${token}` } }
       );

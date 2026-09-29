@@ -41,6 +41,8 @@ export interface MemberProfile {
   flexi_sessions: number;
   flexi_type: string;
   membership_type: string;
+  // "ga" (glamorous assistant) unlocks the member-scanning tab
+  role: string;
 }
 
 interface SessionData {
@@ -54,6 +56,9 @@ interface AuthContextType {
     password: string;
   }) => Promise<{ success: boolean; error?: string }>;
   signOut: () => void;
+  // Swaps the refresh token for a new access token (they expire after ~15 min).
+  // Returns null, and signs out, if the session can't be refreshed.
+  refreshAccessToken: () => Promise<string | null>;
   session: SessionData | null;
   profile: MemberProfile | null;
   isLoading: boolean;
@@ -62,6 +67,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   signIn: async () => ({ success: false }),
   signOut: () => null,
+  refreshAccessToken: async () => null,
   session: null,
   profile: null,
   isLoading: true,
@@ -153,11 +159,28 @@ export function AuthProvider({ children }: PropsWithChildren) {
     router.replace('/login');
   };
 
+  const refreshAccessToken = async () => {
+    if (!session) return null;
+    try {
+      const { data } = await axios.post<{ accessToken: string }>(
+        `${BASE_URL}/api/auth/refresh`,
+        { refreshToken: session.refreshToken }
+      );
+      await tokenStorage.setItem(ACCESS_TOKEN_KEY, data.accessToken);
+      setSession({ ...session, accessToken: data.accessToken });
+      return data.accessToken;
+    } catch {
+      await signOut();
+      return null;
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
         signIn,
         signOut,
+        refreshAccessToken,
         session,
         profile,
         isLoading,

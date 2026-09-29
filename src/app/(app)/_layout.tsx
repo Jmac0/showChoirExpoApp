@@ -9,7 +9,7 @@ import { useAuth } from '@/contexts/authContext';
 const LIGHT_GOLD = 'rgb(222,204,120)';
 
 const TabsLayout = () => {
-  const { session, isLoading } = useAuth();
+  const { session, profile, isLoading } = useAuth();
 
   // Wait for a persisted session to be restored before deciding to redirect,
   // otherwise a logged-in user briefly flashes the login screen on cold start.
@@ -41,12 +41,14 @@ const TabsLayout = () => {
         }}
       />
       <Tabs.Screen
-        name="qrcode"
+        name="scan"
         options={{
-          title: 'Membership Card',
+          title: 'Scan Members',
+          // Only GAs get the scanner; href: null hides the tab for everyone else.
+          href: profile?.role === 'ga' ? undefined : null,
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon
-              name={focused ? 'qr-code' : 'qr-code-outline'}
+              name={focused ? 'scan' : 'scan-outline'}
               color={color}
             />
           ),

@@ -15,13 +15,22 @@
 // export default IndexComponent;
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import {
+  View,
+  Text,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+} from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 
 import { useAuth } from '@/contexts/authContext';
 import { FlexiSessionsRing } from '@/components/FlexiSessionsRing';
 
 const SIGN_IN_HINT_DISMISSED_KEY = 'qrSignInHintDismissed';
+
+// Matches `lightGold` in tailwind.config.js (RefreshControl isn't styled via className).
+const LIGHT_GOLD = 'rgb(222,204,120)';
 
 const getGreeting = () => {
   const hour = new Date().getHours();
@@ -31,8 +40,16 @@ const getGreeting = () => {
 };
 
 const IndexComponent = () => {
-  const { profile } = useAuth();
+  const { profile, refreshProfile } = useAuth();
   const [showSignInHint, setShowSignInHint] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Pull down to re-fetch the profile, e.g. to see the updated flexi count.
+  const onRefresh = async () => {
+    setIsRefreshing(true);
+    await refreshProfile();
+    setIsRefreshing(false);
+  };
 
   // Include name alongside email so the admin's scanner can show it
   // immediately, without waiting on a lookup. Email remains the field
@@ -57,7 +74,18 @@ const IndexComponent = () => {
   };
 
   return (
-    <View className="flex-1 items-center bg-lightBlack pt-10">
+    <ScrollView
+      className="flex-1 bg-lightBlack"
+      contentContainerClassName="items-center pb-10 pt-10"
+      refreshControl={
+        <RefreshControl
+          refreshing={isRefreshing}
+          onRefresh={onRefresh}
+          tintColor={LIGHT_GOLD}
+          colors={[LIGHT_GOLD]}
+        />
+      }
+    >
       {profile?.email ? (
         <>
           <Text className="mt-4 text-2xl font-bold text-lightGold">
@@ -95,7 +123,7 @@ const IndexComponent = () => {
           Unable to load your membership card. Please try logging in again.
         </Text>
       )}
-    </View>
+    </ScrollView>
   );
 };
 

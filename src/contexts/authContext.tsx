@@ -5,10 +5,11 @@ import {
   useContext,
   createContext,
   useEffect,
+  useEffectEvent,
   useState,
   type PropsWithChildren,
 } from 'react';
-import { Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
 
 import { api } from '@/lib/api';
 
@@ -59,6 +60,8 @@ interface AuthContextType {
   // Swaps the refresh token for a new access token (they expire after ~15 min).
   // Returns null, and signs out, if the session can't be refreshed.
   refreshAccessToken: () => Promise<string | null>;
+  // Re-fetches the member's profile (e.g. flexi sessions left) from the DB.
+  refreshProfile: () => Promise<void>;
   session: SessionData | null;
   profile: MemberProfile | null;
   isLoading: boolean;
@@ -68,6 +71,7 @@ const AuthContext = createContext<AuthContextType>({
   signIn: async () => ({ success: false }),
   signOut: () => null,
   refreshAccessToken: async () => null,
+  refreshProfile: async () => {},
   session: null,
   profile: null,
   isLoading: true,
@@ -107,14 +111,38 @@ export function AuthProvider({ children }: PropsWithChildren) {
           tokenStorage.getItem(REFRESH_TOKEN_KEY),
         ]);
         if (accessToken && refreshToken) {
-          const memberProfile = await fetchProfile(accessToken);
-          setSession({ accessToken, refreshToken });
+          let currentToken = accessToken;
+          let memberProfile: MemberProfile;
+          try {
+            memberProfile = await fetchProfile(currentToken);
+          } catch (error) {
+            if (!axios.isAxiosError(error) || error.response?.status !== 401) {
+              throw error;
+            }
+            // Access token expired while the app was closed (they only last
+            // ~15 min) - swap the refresh token for a new one and try again.
+            const { data } = await api.post<{ accessToken: string }>(
+              '/api/auth/refresh',
+              { refreshToken }
+            );
+            currentToken = data.accessToken;
+            await tokenStorage.setItem(ACCESS_TOKEN_KEY, currentToken);
+            memberProfile = await fetchProfile(currentToken);
+          }
+          setSession({ accessToken: currentToken, refreshToken });
           setProfile(memberProfile);
         }
-      } catch {
-        // Stored token is missing/expired/invalid - fall back to logged-out state.
-        await tokenStorage.deleteItem(ACCESS_TOKEN_KEY);
-        await tokenStorage.deleteItem(REFRESH_TOKEN_KEY);
+      } catch (error) {
+        // Only forget the saved login if the server rejected it (e.g. the
+        // 30-day refresh token expired). If the server just couldn't be
+        // reached, keep the tokens so the next app launch can try again.
+        const rejected =
+          axios.isAxiosError(error) &&
+          [401, 403].includes(error.response?.status ?? 0);
+        if (rejected) {
+          await tokenStorage.deleteItem(ACCESS_TOKEN_KEY);
+          await tokenStorage.deleteItem(REFRESH_TOKEN_KEY);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -178,12 +206,43 @@ export function AuthProvider({ children }: PropsWithChildren) {
     }
   };
 
+  const refreshProfile = async () => {
+    if (!session) return;
+    // If anything fails (offline, timeout), keep showing the profile we have.
+    try {
+      setProfile(await fetchProfile(session.accessToken));
+    } catch (error) {
+      if (!axios.isAxiosError(error) || error.response?.status !== 401) return;
+      // Access token expired - get a new one and try once more.
+      // (If the refresh fails, refreshAccessToken signs the member out.)
+      const newToken = await refreshAccessToken();
+      if (!newToken) return;
+      try {
+        setProfile(await fetchProfile(newToken));
+      } catch {
+        // keep the current profile
+      }
+    }
+  };
+
+  // Refresh the profile whenever the app comes back to the foreground, so a
+  // member sees their updated flexi count after being scanned in.
+  // useEffectEvent always sees the latest session without re-subscribing.
+  const onAppStateChange = useEffectEvent((state: string) => {
+    if (state === 'active') refreshProfile();
+  });
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', onAppStateChange);
+    return () => subscription.remove();
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
         signIn,
         signOut,
         refreshAccessToken,
+        refreshProfile,
         session,
         profile,
         isLoading,

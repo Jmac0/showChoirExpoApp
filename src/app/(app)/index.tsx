@@ -16,6 +16,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
 import {
+  Alert,
   View,
   Text,
   Pressable,
@@ -40,7 +41,7 @@ const getGreeting = () => {
 };
 
 const IndexComponent = () => {
-  const { profile, refreshProfile } = useAuth();
+  const { profile, refreshProfile, signOut } = useAuth();
   const [showSignInHint, setShowSignInHint] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -71,6 +72,18 @@ const IndexComponent = () => {
   const dismissSignInHint = () => {
     setShowSignInHint(false);
     AsyncStorage.setItem(SIGN_IN_HINT_DISMISSED_KEY, 'true');
+  };
+
+  // Ask first - it's at the bottom of a scrolling screen, easy to tap by accident.
+  const confirmSignOut = () => {
+    Alert.alert(
+      'Log out?',
+      'You will need your email and password to log back in.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Log out', style: 'destructive', onPress: signOut },
+      ]
+    );
   };
 
   return (
@@ -123,6 +136,14 @@ const IndexComponent = () => {
           Unable to load your membership card. Please try logging in again.
         </Text>
       )}
+
+      {/* Shown even if the profile didn't load, so they can log in again */}
+      <Pressable
+        onPress={confirmSignOut}
+        className="mt-12 rounded-md border border-lightGold px-8 py-3"
+      >
+        <Text className="text-base font-bold text-lightGold">Log out</Text>
+      </Pressable>
     </ScrollView>
   );
 };

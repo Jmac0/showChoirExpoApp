@@ -1,7 +1,13 @@
 import LoginForm from '@/components/LoginForm';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Text, View } from 'react-native';
+import {
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Text,
+} from 'react-native';
 
 import { useAuth } from '@/contexts/authContext';
 
@@ -36,14 +42,32 @@ export default function Login() {
   };
 
   return (
-    <View className="flex-1 bg-lightBlack pt-36">
-      <Text className="mt-8 text-center text-4xl font-bold">Login</Text>
-      <LoginForm
-        handleChange={handleChange}
-        handleLogin={handleLogin}
-        error={error}
-        isSubmitting={isSubmitting}
-      />
-    </View>
+    // Moves the form up out of the way when the keyboard opens
+    <KeyboardAvoidingView
+      className="flex-1 bg-lightBlack"
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView
+        contentContainerClassName="flex-grow items-center justify-center px-8 py-16"
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Logo image is 600x533 */}
+        <Image
+          source={require('@/assets/images/logo.png')}
+          style={{ width: 200, height: 178 }}
+          resizeMode="contain"
+          accessibilityLabel="Show Choir"
+        />
+        <Text className="mb-10 mt-6 text-center text-lg tracking-widest text-lightGold">
+          MEMBERS LOGIN
+        </Text>
+        <LoginForm
+          handleChange={handleChange}
+          handleLogin={handleLogin}
+          error={error}
+          isSubmitting={isSubmitting}
+        />
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }

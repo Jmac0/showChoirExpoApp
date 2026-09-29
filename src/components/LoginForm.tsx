@@ -1,5 +1,11 @@
-import { View, Text, TextInput, Button } from 'react-native';
-import React from 'react';
+import { useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Pressable,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 
 type LoginFormProps = {
   handleChange: (name: string, value: string) => void;
@@ -8,47 +14,100 @@ type LoginFormProps = {
   isSubmitting?: boolean;
 };
 
+// Matches `lightGold` in tailwind.config.js (placeholder/cursor colours
+// aren't styled via className).
+const LIGHT_GOLD = 'rgb(222,204,120)';
+
+const inputClass =
+  'mt-2 rounded-lg border bg-white/10 px-4 py-3 text-base text-white';
+
 const LoginForm = ({
   handleChange,
   handleLogin,
   error,
   isSubmitting,
 }: LoginFormProps) => {
+  const passwordInput = useRef<TextInput>(null);
+  // Which field has focus, to highlight its border in gold
+  const [focused, setFocused] = useState<'email' | 'password' | null>(null);
+
+  const borderFor = (field: 'email' | 'password') =>
+    focused === field ? 'border-lightGold' : 'border-white/20';
+
   return (
-    <View className="px-8 py-10">
-      <View className="flex-col">
-        <Text className="text-xl color-slate-100">Email</Text>
-        <TextInput
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoCorrect={false}
-          textContentType="username"
-          className="mb-4 mt-4 rounded-md border border-gray-300 bg-white px-4 py-2"
-          onChangeText={(value) => handleChange('email', value)}
-        />
-      </View>
-      <View className="">
-        <Text className="pt-5 text-xl color-slate-100">Password</Text>
-        <TextInput
-          autoCapitalize="none"
-          autoCorrect={false}
-          textContentType="password"
-          className="mb-5 mt-4 rounded-md border border-gray-300 bg-white px-4 py-2"
-          placeholder="Password"
-          secureTextEntry
-          onChangeText={(value) => handleChange('password', value)}
-        />
-      </View>
-      {error ? (
-        <Text className="mb-4 text-center text-red-500">{error}</Text>
-      ) : null}
-      <Button
-        title={isSubmitting ? 'Logging in...' : 'Login'}
-        disabled={isSubmitting}
-        onPress={() => {
-          handleLogin();
+    <View className="w-full">
+      {/* --- Email --- */}
+      <Text className="text-sm font-bold uppercase tracking-widest text-lightGold">
+        Email
+      </Text>
+      <TextInput
+        keyboardType="email-address"
+        autoCapitalize="none"
+        autoCorrect={false}
+        autoComplete="email"
+        textContentType="username"
+        returnKeyType="next"
+        placeholder="you@example.com"
+        placeholderTextColor="#6b7280"
+        selectionColor={LIGHT_GOLD}
+        className={`${inputClass} ${borderFor('email')}`}
+        onFocus={() => setFocused('email')}
+        onBlur={() => setFocused(null)}
+        onChangeText={(value) => handleChange('email', value)}
+        // "Next" on the keyboard jumps to the password field
+        submitBehavior="submit"
+        onSubmitEditing={() => passwordInput.current?.focus()}
+      />
+
+      {/* --- Password --- */}
+      <Text className="mt-6 text-sm font-bold uppercase tracking-widest text-lightGold">
+        Password
+      </Text>
+      <TextInput
+        ref={passwordInput}
+        autoCapitalize="none"
+        autoCorrect={false}
+        autoComplete="current-password"
+        textContentType="password"
+        returnKeyType="go"
+        placeholder="Password"
+        placeholderTextColor="#6b7280"
+        selectionColor={LIGHT_GOLD}
+        secureTextEntry
+        className={`${inputClass} ${borderFor('password')}`}
+        onFocus={() => setFocused('password')}
+        onBlur={() => setFocused(null)}
+        onChangeText={(value) => handleChange('password', value)}
+        // "Go" on the keyboard logs in
+        onSubmitEditing={() => {
+          if (!isSubmitting) handleLogin();
         }}
       />
+
+      {/* --- Error --- */}
+      {error ? (
+        <View className="mt-6 rounded-lg border border-red-500/60 bg-red-500/15 px-4 py-3">
+          <Text className="text-center text-red-300">{error}</Text>
+        </View>
+      ) : null}
+
+      {/* --- Log in button --- */}
+      <Pressable
+        onPress={handleLogin}
+        disabled={isSubmitting}
+        className={`mt-8 flex-row items-center justify-center rounded-lg bg-lightGold py-4 active:opacity-80 ${isSubmitting ? 'opacity-70' : ''}`}
+      >
+        {isSubmitting ? (
+          <>
+            <ActivityIndicator color="#000" />
+            <Text className="ml-3 text-lg font-bold text-black">
+              Logging in…
+            </Text>
+          </>
+        ) : (
+          <Text className="text-lg font-bold text-black">Log in</Text>
+        )}
+      </Pressable>
     </View>
   );
 };

@@ -1,11 +1,11 @@
 // GA-only "Scan Members" tab.
 //
-// Flow: camera reads a member's QR code -> we pull their email out of it ->
-// POST it to the website's check-in endpoint -> show a coloured toast with the
-// result (and play a ting if they're allowed in) -> after a few seconds, the
-// scanner is ready for the next person.
+// Flow: GA confirms the rehearsal venue (VenueBar) -> camera reads a member's
+// QR code -> we pull their email out of it -> POST it with the venue to the
+// website's check-in endpoint, which records them as here -> show a coloured
+// toast with the result (and play a ting if they're allowed in) -> after a few
+// seconds, the scanner is ready for the next person.
 
-import axios from 'axios';
 import { setAudioModeAsync, useAudioPlayer } from 'expo-audio';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useIsFocused } from 'expo-router';
@@ -13,8 +13,9 @@ import { useEffect, useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { ScanResultToast, type ScanToast } from '@/components/ScanResultToast';
+import { VenueBar } from '@/components/VenueBar';
 import { useAuth } from '@/contexts/authContext';
-import { api } from '@/lib/api';
+import { useRehearsal } from '@/contexts/rehearsalContext';
 
 // How long a result stays on screen before the scanner accepts the next code.
 const RESULT_DISPLAY_MS = 5000;
@@ -26,7 +27,7 @@ const RESULT_DISPLAY_MS = 5000;
 // Mirrors CheckInResponse in the website's api/member-resources/check-in-member.ts
 //   mandate            - active Direct Debit, let them in (nothing deducted)
 //   flexi              - one flexi session was just deducted
-//   already_checked_in - flexi member scanned again within the cooldown, not charged
+//   already_checked_in - already scanned in at this rehearsal, not charged again
 //   no_sessions        - no mandate and 0 flexi sessions
 //   not_found          - no member with that email
 type CheckInResponse = {
@@ -59,7 +60,11 @@ function toToast(result: CheckInResponse): ScanToast {
       return {
         variant: 'warning',
         title: 'Already signed in',
-        message: `${name} · ${sessionsLeft(result.flexi_sessions)}`,
+        // Direct Debit members have no session count
+        message:
+          result.flexi_sessions === undefined
+            ? name
+            : `${name} · ${sessionsLeft(result.flexi_sessions)}`,
       };
     case 'no_sessions':
       return { variant: 'error', title: 'No sessions left', message: name };
@@ -86,7 +91,9 @@ function parseEmail(data: string) {
 const ScanScreen = () => {
   // --- State & hooks ---
 
-  const { session, profile, refreshAccessToken } = useAuth();
+  const { profile, authRequest } = useAuth();
+  // The rehearsal we're scanning people into (picked in the VenueBar)
+  const { venue } = useRehearsal();
   // null while loading, then { granted: true/false }
   const [permission, requestPermission] = useCameraPermissions();
   // false when the GA is on another tab - used to switch the camera off
@@ -113,36 +120,23 @@ const ScanScreen = () => {
 
   // --- Talk to the website ---
 
-  // Asks the website to check this member in. Returns the API's answer, or
-  // throws if the request fails (network down, server error, etc).
-  const checkIn = async (email: string) => {
-    const post = (token: string) =>
-      api.post<CheckInResponse>(
-        '/api/member-resources/check-in-member',
-        { email },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-    try {
-      return (await post(session!.accessToken)).data;
-    } catch (error) {
-      // Anything other than "not authorised" is a real failure - pass it on.
-      if (!axios.isAxiosError(error) || error.response?.status !== 401) {
-        throw error;
-      }
-      // Access token expired mid-rehearsal - refresh it and try once more.
-      const newToken = await refreshAccessToken();
-      if (!newToken) throw error;
-      return (await post(newToken)).data;
-    }
-  };
+  // Asks the website to check this member in to the selected rehearsal.
+  // Returns the API's answer, or throws if the request fails (network down,
+  // server error, etc). authRequest handles an expired login token.
+  const checkIn = (email: string, venueSlug: string) =>
+    authRequest<CheckInResponse>({
+      method: 'POST',
+      url: '/api/member-resources/check-in-member',
+      data: { email, venue: venueSlug },
+    });
 
   // --- Handle a scan ---
 
   // Called by the camera every time it sees a QR code.
   const handleScan = async ({ data }: { data: string }) => {
-    // 1. Ignore scans while we're still dealing with the last one.
-    if (isBusy.current) return;
+    // 1. Ignore scans while we're still dealing with the last one, or before
+    //    the GA has chosen which rehearsal they're at.
+    if (isBusy.current || !venue) return;
     isBusy.current = true;
     clearTimeout(resetTimer.current);
 
@@ -154,7 +148,7 @@ const ScanScreen = () => {
       result = { variant: 'error', title: 'Not a Show Choir QR code' };
     } else {
       try {
-        const response = await checkIn(email);
+        const response = await checkIn(email, venue.slug);
         result = toToast(response);
         // Ting only when they're allowed in.
         if (response.status === 'mandate' || response.status === 'flexi') {
@@ -213,28 +207,34 @@ const ScanScreen = () => {
     );
   }
 
-  // Ready to scan: full-screen camera with the result toast / hint on top.
+  // Ready to scan: venue bar, then full-screen camera with the result toast /
+  // hint on top.
   return (
     <View className="flex-1 bg-lightBlack">
-      {/* Only mount the camera while this tab is showing, so it's released
-          when the GA switches tabs. */}
-      {isFocused ? (
-        <CameraView
-          style={{ flex: 1 }}
-          facing="back"
-          barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
-          onBarcodeScanned={handleScan}
-        />
-      ) : null}
-      {/* Overlay pinned to the bottom of the camera view */}
-      <View className="absolute bottom-8 left-4 right-4">
-        {toast ? (
-          <ScanResultToast {...toast} />
-        ) : (
-          <Text className="rounded-lg bg-black/60 px-4 py-3 text-center text-base text-white">
-            Point the camera at a member&apos;s QR code
-          </Text>
-        )}
+      <VenueBar label="Scanning for" />
+      <View className="flex-1">
+        {/* Only mount the camera while this tab is showing, so it's released
+            when the GA switches tabs. */}
+        {isFocused ? (
+          <CameraView
+            style={{ flex: 1 }}
+            facing="back"
+            barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
+            onBarcodeScanned={handleScan}
+          />
+        ) : null}
+        {/* Overlay pinned to the bottom of the camera view */}
+        <View className="absolute bottom-8 left-4 right-4">
+          {toast ? (
+            <ScanResultToast {...toast} />
+          ) : (
+            <Text className="rounded-lg bg-black/60 px-4 py-3 text-center text-base text-white">
+              {venue
+                ? 'Point the camera at a member’s QR code'
+                : 'Choose the rehearsal venue above to start scanning'}
+            </Text>
+          )}
+        </View>
       </View>
     </View>
   );

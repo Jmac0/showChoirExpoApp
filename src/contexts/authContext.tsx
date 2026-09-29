@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { type AxiosRequestConfig } from 'axios';
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import {
@@ -60,6 +60,10 @@ interface AuthContextType {
   // Swaps the refresh token for a new access token (they expire after ~15 min).
   // Returns null, and signs out, if the session can't be refreshed.
   refreshAccessToken: () => Promise<string | null>;
+  // Calls the website as the logged-in member and returns the response body,
+  // refreshing an expired access token and retrying once if needed.
+  // e.g. authRequest<Venues>({ url: '/api/member-resources/venues' })
+  authRequest: <T>(config: AxiosRequestConfig) => Promise<T>;
   // Re-fetches the member's profile (e.g. flexi sessions left) from the DB.
   refreshProfile: () => Promise<void>;
   session: SessionData | null;
@@ -71,6 +75,9 @@ const AuthContext = createContext<AuthContextType>({
   signIn: async () => ({ success: false }),
   signOut: () => null,
   refreshAccessToken: async () => null,
+  authRequest: async () => {
+    throw new Error('authRequest must be used inside <AuthProvider />');
+  },
   refreshProfile: async () => {},
   session: null,
   profile: null,
@@ -206,22 +213,42 @@ export function AuthProvider({ children }: PropsWithChildren) {
     }
   };
 
-  const refreshProfile = async () => {
-    if (!session) return;
-    // If anything fails (offline, timeout), keep showing the profile we have.
+  const authRequest = async <T,>(config: AxiosRequestConfig) => {
+    if (!session) throw new Error('Not logged in');
+
+    const send = async (token: string) => {
+      const res = await api.request<T>({
+        ...config,
+        headers: { ...config.headers, Authorization: `Bearer ${token}` },
+      });
+      return res.data;
+    };
+
     try {
-      setProfile(await fetchProfile(session.accessToken));
+      return await send(session.accessToken);
     } catch (error) {
-      if (!axios.isAxiosError(error) || error.response?.status !== 401) return;
+      // Anything other than "not authorised" is a real failure - pass it on.
+      if (!axios.isAxiosError(error) || error.response?.status !== 401) {
+        throw error;
+      }
       // Access token expired - get a new one and try once more.
       // (If the refresh fails, refreshAccessToken signs the member out.)
       const newToken = await refreshAccessToken();
-      if (!newToken) return;
-      try {
-        setProfile(await fetchProfile(newToken));
-      } catch {
-        // keep the current profile
-      }
+      if (!newToken) throw error;
+      return send(newToken);
+    }
+  };
+
+  const refreshProfile = async () => {
+    if (!session) return;
+    try {
+      setProfile(
+        await authRequest<MemberProfile>({
+          url: '/api/member-resources/get-profile',
+        })
+      );
+    } catch {
+      // Offline, timeout, etc - keep showing the profile we have.
     }
   };
 
@@ -242,6 +269,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         signIn,
         signOut,
         refreshAccessToken,
+        authRequest,
         refreshProfile,
         session,
         profile,

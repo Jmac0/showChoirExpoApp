@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import { Redirect, Tabs } from 'expo-router';
 import { TabBarIcon } from '@/components/TabBarIcon';
 import { useAuth } from '@/contexts/authContext';
+import { RehearsalProvider } from '@/contexts/rehearsalContext';
 
 // Matches `lightGold` in tailwind.config.js - kept as a raw value here since
 // React Navigation's screenOptions/tabBarIcon aren't styled via className.
@@ -21,64 +22,82 @@ const TabsLayout = () => {
     return <Redirect href="/login" />;
   }
 
+  const isGA = profile?.role === 'ga';
+
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: LIGHT_GOLD,
-        headerStyle: { backgroundColor: LIGHT_GOLD },
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon
-              name={focused ? 'home' : 'home-outline'}
-              color={color}
-            />
-          ),
+    // Shares the GA's chosen rehearsal venue between the Scan and Who's here tabs
+    <RehearsalProvider>
+      <Tabs
+        screenOptions={{
+          tabBarActiveTintColor: LIGHT_GOLD,
+          headerStyle: { backgroundColor: LIGHT_GOLD },
         }}
-      />
-      <Tabs.Screen
-        name="scan"
-        options={{
-          title: 'Scan Members',
-          // Only GAs get the scanner; href: null hides the tab for everyone else.
-          href: profile?.role === 'ga' ? undefined : null,
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon
-              name={focused ? 'scan' : 'scan-outline'}
-              color={color}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="notifications"
-        options={{
-          title: 'Notifications',
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon
-              name={focused ? 'bulb' : 'bulb-outline'}
-              color={color}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="resources"
-        options={{
-          title: 'Resources',
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon
-              name={focused ? 'musical-note' : 'musical-note-outline'}
-              color={color}
-            />
-          ),
-        }}
-      />
-    </Tabs>
+      >
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: 'Home',
+            tabBarIcon: ({ color, focused }) => (
+              <TabBarIcon
+                name={focused ? 'home' : 'home-outline'}
+                color={color}
+              />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="scan"
+          options={{
+            title: 'Scan Members',
+            // Only GAs get the scanner; href: null hides the tab for everyone else.
+            href: isGA ? undefined : null,
+            tabBarIcon: ({ color, focused }) => (
+              <TabBarIcon
+                name={focused ? 'scan' : 'scan-outline'}
+                color={color}
+              />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="here"
+          options={{
+            title: "Who's here",
+            href: isGA ? undefined : null,
+            tabBarIcon: ({ color, focused }) => (
+              <TabBarIcon
+                name={focused ? 'people' : 'people-outline'}
+                color={color}
+              />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="notifications"
+          options={{
+            title: 'Notifications',
+            tabBarIcon: ({ color, focused }) => (
+              <TabBarIcon
+                name={focused ? 'bulb' : 'bulb-outline'}
+                color={color}
+              />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="resources"
+          options={{
+            title: 'Resources',
+            tabBarIcon: ({ color, focused }) => (
+              <TabBarIcon
+                name={focused ? 'musical-note' : 'musical-note-outline'}
+                color={color}
+              />
+            ),
+          }}
+        />
+      </Tabs>
+    </RehearsalProvider>
   );
 };
 

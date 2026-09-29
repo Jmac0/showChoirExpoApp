@@ -56,9 +56,7 @@ export function FlexiSessionsRing({ remaining, total = 10 }: Props) {
         style={StyleSheet.absoluteFill}
         className="items-center justify-center"
       >
-        <Text className="text-3xl font-bold text-white">
-          {safeRemaining}
-        </Text>
+        <Text className="text-3xl font-bold text-white">{safeRemaining}</Text>
         <Text className="text-xs text-white">sessions left</Text>
       </View>
     </View>

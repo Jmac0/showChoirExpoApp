@@ -16,7 +16,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
 import {
-  Alert,
   View,
   Text,
   Pressable,
@@ -27,6 +26,7 @@ import QRCode from 'react-native-qrcode-svg';
 
 import { useAuth } from '@/contexts/authContext';
 import { FlexiSessionsRing } from '@/components/FlexiSessionsRing';
+import { confirm } from '@/lib/confirm';
 
 const SIGN_IN_HINT_DISMISSED_KEY = 'qrSignInHintDismissed';
 
@@ -75,15 +75,14 @@ const IndexComponent = () => {
   };
 
   // Ask first - it's at the bottom of a scrolling screen, easy to tap by accident.
+  // (confirm() also works in a web browser, where Alert doesn't.)
   const confirmSignOut = () => {
-    Alert.alert(
-      'Log out?',
-      'You will need your email and password to log back in.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Log out', style: 'destructive', onPress: signOut },
-      ]
-    );
+    confirm({
+      title: 'Log out?',
+      message: 'You will need your email and password to log back in.',
+      confirmText: 'Log out',
+      onConfirm: signOut,
+    });
   };
 
   return (
@@ -104,7 +103,8 @@ const IndexComponent = () => {
           <Text className="mt-4 text-2xl font-bold text-lightGold">
             {getGreeting()} {profile.first_name}
           </Text>
-          {profile.membership_type === 'flexi' ? (
+          {/* Also shown to anyone who owes sessions after paying later */}
+          {profile.membership_type === 'flexi' || profile.flexi_sessions < 0 ? (
             <View className="mt-6 items-center justify-center">
               <FlexiSessionsRing remaining={profile.flexi_sessions} />
             </View>

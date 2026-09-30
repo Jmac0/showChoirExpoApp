@@ -14,10 +14,14 @@ function getFillColor(percentRemaining: number) {
 }
 
 type Props = {
+  // Sessions left - negative if they owe sessions after "pay later"
   remaining: number;
+  // A full pack, for how full the ring is drawn
   total?: number;
 };
 
+// Ring on the home screen showing a flexi member's sessions left, or how many
+// they owe (in red) if they've paid later at a rehearsal.
 export function FlexiSessionsRing({ remaining, total = 10 }: Props) {
   // The DB only tracks a running total, not what was originally granted, so
   // a top-up (e.g. buying 10 more while 5 remain) can push remaining above
@@ -27,6 +31,9 @@ export function FlexiSessionsRing({ remaining, total = 10 }: Props) {
   const percentRemaining =
     total > 0 ? Math.min(safeRemaining, total) / total : 0;
   const fillColor = getFillColor(percentRemaining);
+  // Negative after "pay later" at rehearsal - taken off their next pack
+  // (e.g. owes 1, buys 10, has 9). 0 when they don't owe anything.
+  const owed = remaining < 0 ? -remaining : 0;
 
   return (
     <View style={{ width: SIZE, height: SIZE }}>
@@ -35,7 +42,8 @@ export function FlexiSessionsRing({ remaining, total = 10 }: Props) {
           cx={SIZE / 2}
           cy={SIZE / 2}
           r={RADIUS}
-          stroke="#e5e7eb"
+          // Background track: pale red when they owe, grey otherwise
+          stroke={owed ? '#fca5a5' : '#e5e7eb'}
           strokeWidth={STROKE_WIDTH}
           fill="none"
         />
@@ -56,8 +64,22 @@ export function FlexiSessionsRing({ remaining, total = 10 }: Props) {
         style={StyleSheet.absoluteFill}
         className="items-center justify-center"
       >
-        <Text className="text-3xl font-bold text-white">{safeRemaining}</Text>
-        <Text className="text-xs text-white">sessions left</Text>
+        {/* Centre text: "2 sessions owed" in red, or "7 sessions left" */}
+        {owed ? (
+          <>
+            <Text className="text-3xl font-bold text-red-400">{owed}</Text>
+            <Text className="text-xs text-white">
+              session{owed === 1 ? '' : 's'} owed
+            </Text>
+          </>
+        ) : (
+          <>
+            <Text className="text-3xl font-bold text-white">
+              {safeRemaining}
+            </Text>
+            <Text className="text-xs text-white">sessions left</Text>
+          </>
+        )}
       </View>
     </View>
   );

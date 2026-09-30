@@ -3,12 +3,12 @@
 //
 // Keeps itself up to date (polls while the tab is open, plus pull to
 // refresh), and a long-press on a name undoes that check-in - e.g. a mis-scan
-// or someone scanned under the wrong venue. Undo gives back a flexi session.
+// or someone scanned under the wrong venue. Undo reverses the scan: it gives
+// back any flexi session used and removes any payment taken at the desk.
 
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
-  Alert,
   FlatList,
   Pressable,
   RefreshControl,
@@ -20,6 +20,7 @@ import {
 import { VenueBar } from '@/components/VenueBar';
 import { useAuth } from '@/contexts/authContext';
 import { useRehearsal } from '@/contexts/rehearsalContext';
+import { confirm, showMessage } from '@/lib/confirm';
 
 // How often the list refreshes itself while the tab is open, so it picks up
 // scans made on other GAs' phones.
@@ -36,6 +37,17 @@ type AttendanceEntry = {
   last_name: string;
   membership_type?: string;
   scanned_at: string;
+  // Set if they weren't paid up when scanned
+  payment?: 'cash' | 'card' | 'pay_later';
+};
+
+// Badge next to someone's name if they weren't paid up when scanned, showing
+// how they got in (green = paid at the desk, amber = owes). Handy for
+// checking the cash box and iZettle takings at the end of the night.
+const PAYMENT_BADGES = {
+  cash: { label: 'Cash', className: 'bg-green-700' },
+  card: { label: 'Card', className: 'bg-green-700' },
+  pay_later: { label: 'Pay later', className: 'bg-amber-500' },
 };
 
 type AttendanceResponse = {
@@ -92,7 +104,7 @@ const WhosHereScreen = () => {
         data: { checkin_id: entry.id },
       });
     } catch {
-      Alert.alert("Couldn't undo", 'Please try again.');
+      showMessage("Couldn't undo", 'Please try again.');
     }
     loadAttendance();
   };
@@ -116,19 +128,15 @@ const WhosHereScreen = () => {
 
   // --- Actions ---
 
+  // Ask before undoing (confirm() also works in a web browser).
   const confirmUndo = (entry: AttendanceEntry) => {
-    Alert.alert(
-      `Undo ${fullName(entry)}'s check-in?`,
-      'They will be removed from this list. Flexi members get their session back.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Undo check-in',
-          style: 'destructive',
-          onPress: () => undoCheckIn(entry),
-        },
-      ]
-    );
+    confirm({
+      title: `Undo ${fullName(entry)}'s check-in?`,
+      message:
+        'They will be removed from this list. Any session used is given back, and any payment taken at the desk is removed.',
+      confirmText: 'Undo check-in',
+      onConfirm: () => undoCheckIn(entry),
+    });
   };
 
   // --- What to render ---
@@ -205,9 +213,21 @@ const WhosHereScreen = () => {
             >
               <View className="flex-1">
                 <Text className="text-lg text-white">{fullName(item)}</Text>
-                <Text className="text-sm text-gray-400">
-                  {item.membership_type === 'flexi' ? 'Flexi' : 'Direct Debit'}
-                </Text>
+                <View className="flex-row items-center">
+                  <Text className="text-sm text-gray-400">
+                    {item.membership_type === 'flexi'
+                      ? 'Flexi'
+                      : 'Direct Debit'}
+                  </Text>
+                  {/* Cash / Card / Pay later badge, if they paid at the desk */}
+                  {item.payment ? (
+                    <Text
+                      className={`ml-2 rounded px-1.5 py-0.5 text-xs font-bold text-white ${PAYMENT_BADGES[item.payment].className}`}
+                    >
+                      {PAYMENT_BADGES[item.payment].label}
+                    </Text>
+                  ) : null}
+                </View>
               </View>
               <Text className="text-base text-gray-300">
                 {formatTime(item.scanned_at)}

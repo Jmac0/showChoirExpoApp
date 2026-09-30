@@ -16,9 +16,14 @@ const LOCAL_HOST = /^(localhost|\d{1,3}(\.\d{1,3}){3})$/;
 function devBaseUrl() {
   if (!__DEV__) return null;
 
+  // On web, the page's own address. `window` doesn't exist while Expo
+  // pre-renders the web pages in Node, so fall back to the .env address then
+  // (the browser loads this file again and detects it properly).
   const host =
     Platform.OS === 'web'
-      ? window.location.hostname
+      ? typeof window !== 'undefined'
+        ? window.location.hostname
+        : undefined
       : Constants.expoConfig?.hostUri?.split(':')[0];
 
   return host && LOCAL_HOST.test(host)

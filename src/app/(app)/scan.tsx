@@ -10,6 +10,10 @@
 // themselves in too - free, no payment check (GAs often sing for free) - and
 // disappears once they're checked in at the selected rehearsal.
 //
+// "Search by name" (bottom of the camera) is for members without their QR
+// code: the GA finds them in the MemberSearch panel and taps Check in, which
+// works exactly like scanning their card.
+//
 // If they're not paid up (no sessions left, owing, or no active Direct
 // Debit), the PaymentDrawer slides up instead of a toast. The GA records cash
 // or card (iZettle) for a pack of 10, or "pay later", and that choice is sent
@@ -23,6 +27,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import {
+  MemberSearch,
+  type MemberSearchResult,
+} from '@/components/MemberSearch';
+import {
   PaymentDrawer,
   type DeskPayment,
   type UnpaidMember,
@@ -34,6 +42,9 @@ import { useRehearsal } from '@/contexts/rehearsalContext';
 
 // How long a result stays on screen before the scanner accepts the next code.
 const RESULT_DISPLAY_MS = 5000;
+
+// Matches `lightGold` in tailwind.config.js (icon colours aren't set via className)
+const LIGHT_GOLD = 'rgb(222,204,120)';
 
 // ---------------------------------------------------------------------------
 // Types & helpers (outside the component - they don't need React state)
@@ -336,9 +347,9 @@ const ScanScreen = () => {
   // Called by the camera every time it sees a QR code.
   const handleScan = async ({ data }: { data: string }) => {
     // 1. Ignore scans while we're still dealing with the last one (including
-    //    while the payment drawer is open), or before the GA has chosen which
-    //    rehearsal they're at.
-    if (isBusy.current || !venue) return;
+    //    while the payment drawer is open), while the name search is open, or
+    //    before the GA has chosen which rehearsal they're at.
+    if (isBusy.current || isSearchOpen || !venue) return;
     isBusy.current = true;
     clearTimeout(resetTimer.current);
 
@@ -367,6 +378,25 @@ const ScanScreen = () => {
     clearTimeout(resetTimer.current);
     await checkInEmail(profile.email);
     loadSelfStatus();
+  };
+
+  // --- "Search by name" (no QR code) ---
+
+  // For someone with no phone or printed card: the GA finds them by name in
+  // the MemberSearch panel and taps Check in, which is handled exactly like
+  // scanning their card - same toast, ting and payment drawer.
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  const handleSearchCheckIn = async (member: MemberSearchResult) => {
+    // Not while the payment drawer is open for someone else
+    if (unpaid || !venue) return;
+    // Replace any result still showing from the last scan
+    isBusy.current = true;
+    clearTimeout(resetTimer.current);
+    setToast(null);
+    await checkInEmail(member.email);
+    // If the GA found themselves, hide "Check myself in"
+    if (member.email === profile?.email) loadSelfStatus();
   };
 
   // --- Handle the payment drawer ---
@@ -473,6 +503,18 @@ const ScanScreen = () => {
         ) : null}
         {/* Overlay pinned to the bottom of the camera view */}
         <View className="absolute bottom-8 left-4 right-4">
+          {/* For members without their QR code (hidden while a result shows) */}
+          {venue && !toast ? (
+            <Pressable
+              onPress={() => setIsSearchOpen(true)}
+              className="mb-3 flex-row items-center justify-center self-center rounded-full border-2 border-lightGold bg-black/70 px-5 py-3 active:opacity-80"
+            >
+              <Ionicons name="search" size={18} color={LIGHT_GOLD} />
+              <Text className="ml-2 text-base font-bold text-lightGold">
+                Search by name
+              </Text>
+            </Pressable>
+          ) : null}
           {toast ? (
             <ScanResultToast {...toast} />
           ) : (
@@ -492,6 +534,13 @@ const ScanScreen = () => {
         isSaving={isSaving}
         onChoose={handlePayment}
         onCancel={handleCancelPayment}
+      />
+
+      {/* "Search by name" panel - closes itself when a member is picked */}
+      <MemberSearch
+        visible={isFocused && isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+        onCheckIn={handleSearchCheckIn}
       />
     </View>
   );

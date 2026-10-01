@@ -39,6 +39,8 @@ type AttendanceEntry = {
   scanned_at: string;
   // Set if they weren't paid up when scanned
   payment?: 'cash' | 'card' | 'pay_later';
+  // Pounds taken at the desk with a cash/card payment
+  amount?: number;
 };
 
 // Badge next to someone's name if they weren't paid up when scanned, showing
@@ -224,7 +226,9 @@ const WhosHereScreen = () => {
                     <Text
                       className={`ml-2 rounded px-1.5 py-0.5 text-xs font-bold text-white ${PAYMENT_BADGES[item.payment].className}`}
                     >
+                      {/* e.g. "Cash £95" - handy for checking the takings */}
                       {PAYMENT_BADGES[item.payment].label}
+                      {item.amount ? ` £${item.amount}` : ''}
                     </Text>
                   ) : null}
                 </View>

@@ -12,6 +12,14 @@ export type UnpaidMember = {
   membership_type?: string;
   // 0, or negative if they already owe sessions
   flexi_sessions: number;
+  // What to charge for a pack of 10 - by card (pack_price) and by cash
+  // (cash_price, cheaper as we pass on the card fee saving):
+  //   full price - card £95, cash £90;  concession - card £85, cash £80
+  // Set by the website from its env vars, so prices are changed there.
+  pack_price?: number;
+  cash_price?: number;
+  // Existing concession member (new members can't join as concession)
+  concession?: boolean;
 };
 
 type Props = {
@@ -40,6 +48,10 @@ function reason(member: UnpaidMember) {
 // GA can take payment at the desk for a pack of 10 sessions (cash, or card on
 // iZettle) or let them in to pay later. Every option checks them in.
 export function PaymentDrawer({ member, isSaving, onChoose, onCancel }: Props) {
+  // "£90" / "£95" - or nothing if an older website didn't send the prices
+  const cashPrice = member?.cash_price ? `£${member.cash_price}` : '';
+  const cardPrice = member?.pack_price ? `£${member.pack_price}` : '';
+
   return (
     <Modal
       visible={!!member}
@@ -60,9 +72,15 @@ export function PaymentDrawer({ member, isSaving, onChoose, onCancel }: Props) {
             </Text>
 
             {/* --- Take payment for a pack --- */}
-            <Text className="mb-3 mt-6 text-center text-base text-gray-300">
+            <Text className="mt-6 text-center text-base text-gray-300">
               Take payment for 10 sessions:
             </Text>
+            <Text className="mb-3 text-center text-xs text-gray-400">
+              {member.concession ? 'Concession price · ' : ''}Cash is cheaper -
+              we pass on the card fee
+            </Text>
+            {/* Each button shows its own price, big so it's easy to read at
+                the desk */}
             <View className="flex-row gap-3">
               <Pressable
                 disabled={isSaving}
@@ -70,14 +88,25 @@ export function PaymentDrawer({ member, isSaving, onChoose, onCancel }: Props) {
                 className="flex-1 items-center rounded-lg bg-lightGold py-4 active:opacity-80"
               >
                 <Text className="text-lg font-bold text-black">Cash</Text>
+                {cashPrice ? (
+                  <Text className="text-3xl font-bold text-black">
+                    {cashPrice}
+                  </Text>
+                ) : null}
               </Pressable>
               <Pressable
                 disabled={isSaving}
                 onPress={() => onChoose('card')}
                 className="flex-1 items-center rounded-lg bg-lightGold py-4 active:opacity-80"
               >
-                <Text className="text-lg font-bold text-black">Card</Text>
-                <Text className="text-xs text-black">iZettle</Text>
+                <Text className="text-lg font-bold text-black">
+                  Card · iZettle
+                </Text>
+                {cardPrice ? (
+                  <Text className="text-3xl font-bold text-black">
+                    {cardPrice}
+                  </Text>
+                ) : null}
               </Pressable>
             </View>
 

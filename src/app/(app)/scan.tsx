@@ -49,6 +49,12 @@ type CheckInResponse = {
   membership_type?: string;
   // Negative when they owe sessions after paying later
   flexi_sessions?: number;
+  // With no_sessions only: price of their pack of 10 to take at the desk, by
+  // card (pack_price) and cash (cash_price, £5 less) - set in the website's
+  // env vars: full price card £95 / cash £90, concession £85 / £80
+  pack_price?: number;
+  cash_price?: number;
+  concession?: boolean;
 };
 
 // Mirrors RecordPaymentResponse in the website's api/member-resources/record-payment.ts
@@ -61,6 +67,8 @@ type RecordPaymentResponse = {
   first_name?: string;
   last_name?: string;
   flexi_sessions?: number;
+  // Pounds taken at the desk (paid only)
+  amount?: number;
 };
 
 // "1 session left" / "6 sessions left" / "owes 2 sessions"
@@ -120,7 +128,8 @@ function toPaymentToast(
     case 'paid':
       return {
         variant: 'success',
-        title: `Paid by ${payment} · ${sessionsLeft(result.flexi_sessions)}`,
+        // e.g. "Paid £95 by cash · 9 sessions left"
+        title: `Paid ${result.amount ? `£${result.amount} ` : ''}by ${payment} · ${sessionsLeft(result.flexi_sessions)}`,
         message: name,
       };
     case 'pay_later':
@@ -270,6 +279,9 @@ const ScanScreen = () => {
           name: fullName(response),
           membership_type: response.membership_type,
           flexi_sessions: response.flexi_sessions ?? 0,
+          pack_price: response.pack_price,
+          cash_price: response.cash_price,
+          concession: response.concession,
         });
         return;
       }

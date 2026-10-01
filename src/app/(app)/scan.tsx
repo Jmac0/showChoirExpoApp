@@ -6,15 +6,20 @@
 // toast with the result (and play a ting if they're allowed in) -> after a few
 // seconds, the scanner is ready for the next person.
 //
+// A "Check myself in" button at the top of the camera lets the GA check
+// themselves in too - free, no payment check (GAs often sing for free) - and
+// disappears once they're checked in at the selected rehearsal.
+//
 // If they're not paid up (no sessions left, owing, or no active Direct
 // Debit), the PaymentDrawer slides up instead of a toast. The GA records cash
 // or card (iZettle) for a pack of 10, or "pay later", and that choice is sent
 // to the website's record-payment endpoint, which checks them in.
 
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { setAudioModeAsync, useAudioPlayer } from 'expo-audio';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { useIsFocused } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useFocusEffect, useIsFocused } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import {
@@ -36,6 +41,7 @@ const RESULT_DISPLAY_MS = 5000;
 
 // Mirrors CheckInResponse in the website's api/member-resources/check-in-member.ts
 //   mandate            - active Direct Debit, let them in (nothing deducted)
+//   ga                 - a GA, free - no payment check, nothing deducted
 //   flexi              - one flexi session was just deducted
 //   already_checked_in - already scanned in at this rehearsal, not charged again
 //   no_sessions        - not paid up (no mandate, 0 or fewer flexi sessions) -
@@ -43,7 +49,12 @@ const RESULT_DISPLAY_MS = 5000;
 //   not_found          - no member with that email
 type CheckInResponse = {
   status:
-    'mandate' | 'flexi' | 'already_checked_in' | 'no_sessions' | 'not_found';
+    | 'mandate'
+    | 'ga'
+    | 'flexi'
+    | 'already_checked_in'
+    | 'no_sessions'
+    | 'not_found';
   first_name?: string;
   last_name?: string;
   membership_type?: string;
@@ -91,6 +102,8 @@ function toToast(result: CheckInResponse): ScanToast {
   switch (result.status) {
     case 'mandate':
       return { variant: 'success', title: 'OK', message: name };
+    case 'ga':
+      return { variant: 'success', title: 'OK · GA', message: name };
     case 'flexi':
       return {
         variant: 'success',
@@ -169,7 +182,7 @@ const ScanScreen = () => {
 
   const { profile, authRequest } = useAuth();
   // The rehearsal we're scanning people into (picked in the VenueBar)
-  const { venue } = useRehearsal();
+  const { venue, today } = useRehearsal();
   // null while loading, then { granted: true/false }
   const [permission, requestPermission] = useCameraPermissions();
   // false when the GA is on another tab - used to switch the camera off
@@ -246,6 +259,78 @@ const ScanScreen = () => {
     }, RESULT_DISPLAY_MS);
   };
 
+  // --- Is the GA checked in here themselves? ---
+
+  // For the "Check myself in" button: whether the GA using this phone is
+  // already checked in at the selected rehearsal (asked from the website, so
+  // it's right after reopening the app too). Remembers which venue it's for,
+  // so switching venue doesn't show the last venue's answer.
+  const [selfStatus, setSelfStatus] = useState<{
+    venueSlug: string;
+    checkedIn: boolean;
+  } | null>(null);
+
+  const loadSelfStatus = useCallback(async () => {
+    if (!venue || !today) return;
+    try {
+      const data = await authRequest<{ me_checked_in: boolean }>({
+        url: '/api/member-resources/attendance',
+        params: { venue: venue.slug, date: today },
+      });
+      setSelfStatus({ venueSlug: venue.slug, checkedIn: data.me_checked_in });
+    } catch {
+      // Can't tell - leave the button as it was
+    }
+    // authRequest changes identity every render; the venue/date are what matter.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [venue?.slug, today]);
+
+  // Check whenever the Scan tab is opened or the venue changes (e.g. after
+  // undoing their own check-in on Who's here, the button comes back).
+  useFocusEffect(
+    useCallback(() => {
+      loadSelfStatus();
+    }, [loadSelfStatus])
+  );
+
+  const showSelfCheckIn =
+    !!venue && selfStatus?.venueSlug === venue.slug && !selfStatus.checkedIn;
+
+  // --- Check someone in ---
+
+  // Checks in the member with this email at the selected rehearsal and shows
+  // the result - used for scanned QR codes and the GA's "Check myself in".
+  // The caller has already set isBusy.
+  const checkInEmail = async (email: string) => {
+    if (!venue) return;
+    try {
+      const response = await checkIn(email, venue.slug);
+
+      // Not paid up - open the drawer and wait for the GA to choose.
+      // Scanning stays paused (isBusy) until they do.
+      if (response.status === 'no_sessions') {
+        setUnpaid({
+          email,
+          name: fullName(response),
+          membership_type: response.membership_type,
+          flexi_sessions: response.flexi_sessions ?? 0,
+          pack_price: response.pack_price,
+          cash_price: response.cash_price,
+          concession: response.concession,
+        });
+        return;
+      }
+
+      showResult(
+        toToast(response),
+        ['mandate', 'ga', 'flexi'].includes(response.status)
+      );
+    } catch {
+      // Couldn't reach the website, or it errored.
+      showResult(couldNotCheck, false);
+    }
+  };
+
   // --- Handle a scan ---
 
   // Called by the camera every time it sees a QR code.
@@ -268,32 +353,20 @@ const ScanScreen = () => {
     }
 
     // 3. Check them in.
-    try {
-      const response = await checkIn(email, venue.slug);
+    await checkInEmail(email);
+  };
 
-      // Not paid up - open the drawer and wait for the GA to choose.
-      // Scanning stays paused (isBusy) until they do.
-      if (response.status === 'no_sessions') {
-        setUnpaid({
-          email,
-          name: fullName(response),
-          membership_type: response.membership_type,
-          flexi_sessions: response.flexi_sessions ?? 0,
-          pack_price: response.pack_price,
-          cash_price: response.cash_price,
-          concession: response.concession,
-        });
-        return;
-      }
+  // --- "Check myself in" button ---
 
-      showResult(
-        toToast(response),
-        response.status === 'mandate' || response.status === 'flexi'
-      );
-    } catch {
-      // Couldn't reach the website, or it errored.
-      showResult(couldNotCheck, false);
-    }
+  // The GA checks themselves in, as if they'd scanned their own card. GAs are
+  // free: the website just records them as here (status "ga") - no payment
+  // check, no session used. Then the button disappears.
+  const handleSelfCheckIn = async () => {
+    if (isBusy.current || !venue || !profile?.email) return;
+    isBusy.current = true;
+    clearTimeout(resetTimer.current);
+    await checkInEmail(profile.email);
+    loadSelfStatus();
   };
 
   // --- Handle the payment drawer ---
@@ -317,6 +390,8 @@ const ScanScreen = () => {
       // Close the drawer either way; showResult re-enables scanning.
       setIsSaving(false);
       setUnpaid(null);
+      // If the GA was paying for themselves, hide "Check myself in"
+      if (unpaid.email === profile?.email) loadSelfStatus();
     }
   };
 
@@ -380,6 +455,21 @@ const ScanScreen = () => {
             barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
             onBarcodeScanned={handleScan}
           />
+        ) : null}
+        {/* "Check myself in" - top of the camera, until the GA is checked in
+            at this rehearsal (hidden while a result is showing) */}
+        {showSelfCheckIn && !toast ? (
+          <View className="absolute left-0 right-0 top-4 items-center">
+            <Pressable
+              onPress={handleSelfCheckIn}
+              className="flex-row items-center rounded-full bg-lightGold px-5 py-3 active:opacity-80"
+            >
+              <Ionicons name="person-add" size={20} color="black" />
+              <Text className="ml-2 text-base font-bold text-black">
+                Check myself in
+              </Text>
+            </Pressable>
+          </View>
         ) : null}
         {/* Overlay pinned to the bottom of the camera view */}
         <View className="absolute bottom-8 left-4 right-4">

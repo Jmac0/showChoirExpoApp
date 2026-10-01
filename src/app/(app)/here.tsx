@@ -6,6 +6,7 @@
 // or someone scanned under the wrong venue. Undo reverses the scan: it gives
 // back any flexi session used and removes any payment taken at the desk.
 
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
@@ -41,6 +42,8 @@ type AttendanceEntry = {
   payment?: 'cash' | 'card' | 'pay_later';
   // Pounds taken at the desk with a cash/card payment
   amount?: number;
+  // A GA - shown with a gold star, and "GA" instead of their membership type
+  is_ga?: boolean;
 };
 
 // Badge next to someone's name if they weren't paid up when scanned, showing
@@ -214,12 +217,29 @@ const WhosHereScreen = () => {
               className="mx-4 flex-row items-center justify-between border-b border-white/10 py-3"
             >
               <View className="flex-1">
-                <Text className="text-lg text-white">{fullName(item)}</Text>
+                {/* Name, with a gold star for GAs */}
                 <View className="flex-row items-center">
-                  <Text className="text-sm text-gray-400">
-                    {item.membership_type === 'flexi'
-                      ? 'Flexi'
-                      : 'Direct Debit'}
+                  <Text className="text-lg text-white">{fullName(item)}</Text>
+                  {item.is_ga ? (
+                    <Ionicons
+                      name="star"
+                      size={16}
+                      color={LIGHT_GOLD}
+                      style={{ marginLeft: 6 }}
+                      accessibilityLabel="GA"
+                    />
+                  ) : null}
+                </View>
+                <View className="flex-row items-center">
+                  {/* GAs come free, so show "GA" rather than how they pay */}
+                  <Text
+                    className={`text-sm ${item.is_ga ? 'text-lightGold' : 'text-gray-400'}`}
+                  >
+                    {item.is_ga
+                      ? 'GA'
+                      : item.membership_type === 'flexi'
+                        ? 'Flexi'
+                        : 'Direct Debit'}
                   </Text>
                   {/* Cash / Card / Pay later badge, if they paid at the desk */}
                   {item.payment ? (

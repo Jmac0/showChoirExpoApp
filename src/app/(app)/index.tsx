@@ -55,6 +55,9 @@ const IndexComponent = () => {
   // Include name alongside email so the admin's scanner can show it
   // immediately, without waiting on a lookup. Email remains the field
   // used to identify the member for any server-side action.
+  // The website's printable membership card uses exactly the same contents
+  // (membershipQrValue in the website's components/members/MembershipCard.tsx)
+  // - keep the two in step if this ever changes.
   const qrValue = profile
     ? JSON.stringify({
         email: profile.email,

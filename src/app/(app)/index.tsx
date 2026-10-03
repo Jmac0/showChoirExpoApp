@@ -151,7 +151,7 @@ const IndexComponent = () => {
                   ? `Your membership stays active until ${dayMonth(
                       profile.direct_debit.grace_ends_at
                     )} - set up a new Direct Debit before then to keep singing without a break.`
-                  : 'Your membership is no longer active. Set up a new Direct Debit, or buy a pack of Flexi sessions, to keep singing.'}
+                  : 'Your membership is no longer active. Set up a new Direct Debit to keep singing.'}
               </Text>
               <Pressable
                 onPress={openNewDirectDebit}
@@ -175,11 +175,39 @@ const IndexComponent = () => {
           <Text className="mt-6 text-center text-xl font-bold text-lightGold">
             Membership Card
           </Text>
-          <View className="mt-8 items-center justify-center rounded-lg bg-white p-8">
-            <QRCode value={qrValue} size={220} />
-          </View>
+          {/* No card once a Direct Debit membership has ended (14 days after
+              it stopped, or never set up) - the website decides
+              (card_active); an older website doesn't say, so show it */}
+          {profile.card_active === false ? (
+            <View className="mt-6 w-11/12 items-center rounded-xl border-2 border-amber-400 p-5">
+              <Text className="text-center text-base text-gray-200">
+                Your membership isn&apos;t active at the moment, so your
+                membership card isn&apos;t available. Set up a new Direct Debit
+                to get it back straight away.
+              </Text>
+              {/* The notice above already has the button if their Direct
+                  Debit stopped - this is for one that was never set up */}
+              {!profile.direct_debit ? (
+                <Pressable
+                  onPress={openNewDirectDebit}
+                  disabled={isOpeningDirectDebit}
+                  className="mt-4 w-full items-center rounded-md bg-lightGold py-3"
+                >
+                  <Text className="font-bold text-black">
+                    {isOpeningDirectDebit
+                      ? 'Just a moment...'
+                      : 'Set up a Direct Debit'}
+                  </Text>
+                </Pressable>
+              ) : null}
+            </View>
+          ) : (
+            <View className="mt-8 items-center justify-center rounded-lg bg-white p-8">
+              <QRCode value={qrValue} size={220} />
+            </View>
+          )}
 
-          {showSignInHint ? (
+          {showSignInHint && profile.card_active !== false ? (
             <View className="mt-8 w-11/12 flex-row items-center justify-between rounded-md bg-slate-50 p-3">
               <Text className="flex-1 text-center">
                 Show this code at rehearsal to sign in

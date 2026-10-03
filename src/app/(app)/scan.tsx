@@ -77,6 +77,9 @@ type CheckInResponse = {
   pack_price?: number;
   cash_price?: number;
   concession?: boolean;
+  // With no_sessions only: whether they can pay at the desk (Flexi members
+  // only - Flexi is being phased out)
+  can_buy_flexi?: boolean;
 };
 
 // Mirrors RecordPaymentResponse in the website's api/member-resources/record-payment.ts
@@ -328,6 +331,7 @@ const ScanScreen = () => {
           pack_price: response.pack_price,
           cash_price: response.cash_price,
           concession: response.concession,
+          can_buy_flexi: response.can_buy_flexi,
         });
         return;
       }

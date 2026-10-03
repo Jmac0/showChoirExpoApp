@@ -54,6 +54,9 @@ export interface MemberProfile {
   active_mandate: boolean;
   // Set if their Direct Debit has stopped - the home screen shows a notice
   direct_debit?: DirectDebitNotice | null;
+  // Whether to show the membership card (QR code) - false once a Direct
+  // Debit membership has ended (the website's isMembershipCardActive)
+  card_active?: boolean;
   flexi_sessions: number;
   flexi_type: string;
   membership_type: string;

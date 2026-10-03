@@ -20,6 +20,10 @@ export type UnpaidMember = {
   cash_price?: number;
   // Existing concession member (new members can't join as concession)
   concession?: boolean;
+  // Whether they can pay at the desk. Flexi is being phased out, so only
+  // Flexi members can - anyone else (e.g. a Direct Debit that's stopped) is
+  // told to set up a Direct Debit instead. Set by the website.
+  can_buy_flexi?: boolean;
 };
 
 type Props = {
@@ -47,10 +51,13 @@ function reason(member: UnpaidMember) {
 // Slides up on the Scan tab when someone who isn't paid up is scanned, so the
 // GA can take payment at the desk for a pack of 10 sessions (cash, or card on
 // iZettle) or let them in to pay later. Every option checks them in.
+// Flexi members only - anyone else just sees why, and how to sort it out.
 export function PaymentDrawer({ member, isSaving, onChoose, onCancel }: Props) {
   // "£90" / "£95" - or nothing if an older website didn't send the prices
   const cashPrice = member?.cash_price ? `£${member.cash_price}` : '';
   const cardPrice = member?.pack_price ? `£${member.pack_price}` : '';
+  // An older website doesn't say - then only Direct Debit members can't pay
+  const canPay = member?.can_buy_flexi ?? member?.membership_type !== 'DD';
 
   return (
     <Modal
@@ -71,60 +78,73 @@ export function PaymentDrawer({ member, isSaving, onChoose, onCancel }: Props) {
               {reason(member)}
             </Text>
 
-            {/* --- Take payment for a pack --- */}
-            <Text className="mt-6 text-center text-base text-gray-300">
-              Take payment for 10 sessions:
-            </Text>
-            <Text className="mb-3 text-center text-xs text-gray-400">
-              {member.concession ? 'Concession price · ' : ''}Cash is cheaper -
-              we pass on the card fee
-            </Text>
-            {/* Each button shows its own price, big so it's easy to read at
-                the desk */}
-            <View className="flex-row gap-3">
-              <Pressable
-                disabled={isSaving}
-                onPress={() => onChoose('cash')}
-                className="flex-1 items-center rounded-lg bg-lightGold py-4 active:opacity-80"
-              >
-                <Text className="text-lg font-bold text-black">Cash</Text>
-                {cashPrice ? (
-                  <Text className="text-3xl font-bold text-black">
-                    {cashPrice}
-                  </Text>
-                ) : null}
-              </Pressable>
-              <Pressable
-                disabled={isSaving}
-                onPress={() => onChoose('card')}
-                className="flex-1 items-center rounded-lg bg-lightGold py-4 active:opacity-80"
-              >
-                <Text className="text-lg font-bold text-black">
-                  Card · iZettle
-                </Text>
-                {cardPrice ? (
-                  <Text className="text-3xl font-bold text-black">
-                    {cardPrice}
-                  </Text>
-                ) : null}
-              </Pressable>
-            </View>
+            {/* --- Not a Flexi member: nothing to take, explain instead --- */}
+            {!canPay ? (
+              <Text className="mt-6 text-center text-base text-gray-300">
+                Flexi packs aren&apos;t available for this member. They need to
+                set up a new Direct Debit - from the notice on the app&apos;s
+                home screen or their Account page on the website.
+              </Text>
+            ) : null}
 
-            {/* --- Let them in without paying --- */}
-            <Pressable
-              disabled={isSaving}
-              onPress={() => onChoose('pay_later')}
-              className="mt-3 items-center rounded-lg border-2 border-amber-400 py-4 active:opacity-80"
-            >
-              <Text className="text-lg font-bold text-amber-400">
-                Pay later
-              </Text>
-              {/* Preview of the new balance: 0 -> -1, -1 -> -2, ... */}
-              <Text className="text-xs text-gray-300">
-                Let them in - their balance goes to{' '}
-                {Math.min(member.flexi_sessions, 0) - 1}
-              </Text>
-            </Pressable>
+            {/* --- Take payment for a pack --- */}
+            {canPay ? (
+              <>
+                <Text className="mt-6 text-center text-base text-gray-300">
+                  Take payment for 10 sessions:
+                </Text>
+                <Text className="mb-3 text-center text-xs text-gray-400">
+                  {member.concession ? 'Concession price · ' : ''}Cash is
+                  cheaper - we pass on the card fee
+                </Text>
+                {/* Each button shows its own price, big so it's easy to read at
+                the desk */}
+                <View className="flex-row gap-3">
+                  <Pressable
+                    disabled={isSaving}
+                    onPress={() => onChoose('cash')}
+                    className="flex-1 items-center rounded-lg bg-lightGold py-4 active:opacity-80"
+                  >
+                    <Text className="text-lg font-bold text-black">Cash</Text>
+                    {cashPrice ? (
+                      <Text className="text-3xl font-bold text-black">
+                        {cashPrice}
+                      </Text>
+                    ) : null}
+                  </Pressable>
+                  <Pressable
+                    disabled={isSaving}
+                    onPress={() => onChoose('card')}
+                    className="flex-1 items-center rounded-lg bg-lightGold py-4 active:opacity-80"
+                  >
+                    <Text className="text-lg font-bold text-black">
+                      Card · iZettle
+                    </Text>
+                    {cardPrice ? (
+                      <Text className="text-3xl font-bold text-black">
+                        {cardPrice}
+                      </Text>
+                    ) : null}
+                  </Pressable>
+                </View>
+
+                {/* --- Let them in without paying --- */}
+                <Pressable
+                  disabled={isSaving}
+                  onPress={() => onChoose('pay_later')}
+                  className="mt-3 items-center rounded-lg border-2 border-amber-400 py-4 active:opacity-80"
+                >
+                  <Text className="text-lg font-bold text-amber-400">
+                    Pay later
+                  </Text>
+                  {/* Preview of the new balance: 0 -> -1, -1 -> -2, ... */}
+                  <Text className="text-xs text-gray-300">
+                    Let them in - their balance goes to{' '}
+                    {Math.min(member.flexi_sessions, 0) - 1}
+                  </Text>
+                </Pressable>
+              </>
+            ) : null}
 
             {/* --- Don't check them in --- */}
             {isSaving ? (
@@ -132,7 +152,7 @@ export function PaymentDrawer({ member, isSaving, onChoose, onCancel }: Props) {
             ) : (
               <Pressable onPress={onCancel} hitSlop={8} className="mt-6">
                 <Text className="text-center text-base text-gray-400 underline">
-                  Cancel - don&apos;t check in
+                  {canPay ? "Cancel - don't check in" : 'Close'}
                 </Text>
               </Pressable>
             )}

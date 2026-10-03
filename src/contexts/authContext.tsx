@@ -183,7 +183,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   const signIn: AuthContextType['signIn'] = async (formData) => {
     const email = formData.email.trim().toLowerCase();
-    const password = formData.password.trim();
+    // Passwords are sent exactly as typed (spaces included), like the
+    // website's login - only the email is tidied up
+    const { password } = formData;
 
     try {
       const { data } = await api.post<SessionData>('/api/auth/appLogin', {

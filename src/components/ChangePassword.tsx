@@ -9,7 +9,7 @@ import { showMessage } from '@/lib/confirm';
 // Matches `lightGold` in tailwind.config.js (icons aren't styled via className)
 const LIGHT_GOLD = 'rgb(222,204,120)';
 // Same rule as the website (checked again there)
-const MIN_PASSWORD_LENGTH = 4;
+const MIN_PASSWORD_LENGTH = 8;
 
 const INPUT =
   'rounded-md border-2 border-lightGold/60 bg-white px-3 py-2 text-base text-black';

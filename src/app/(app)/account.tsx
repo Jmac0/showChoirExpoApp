@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, Text } from 'react-native';
 
+import { DeleteAccount } from '@/components/DeleteAccount';
 import { MembershipDetails } from '@/components/MembershipDetails';
 import { useAuth } from '@/contexts/authContext';
 import { confirm } from '@/lib/confirm';
@@ -9,7 +10,7 @@ import { confirm } from '@/lib/confirm';
 const LIGHT_GOLD = 'rgb(222,204,120)';
 
 // Account tab: their membership details (type, Direct Debit status, email -
-// like the website's Account page) and logging out. Notices that need
+// like the website's Account page), logging out, and deleting their account. Notices that need
 // acting on (Direct Debit stopped, Flexi sessions expiring) stay on the
 // Home tab, next to the membership card, so they're seen.
 const AccountScreen = () => {
@@ -62,6 +63,9 @@ const AccountScreen = () => {
       >
         <Text className="text-base font-bold text-lightGold">Log out</Text>
       </Pressable>
+
+      {/* Permanently delete their account (only once it's loaded) */}
+      {profile?.email ? <DeleteAccount /> : null}
     </ScrollView>
   );
 };

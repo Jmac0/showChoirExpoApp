@@ -11,7 +11,7 @@ Expo (React Native) app for Show Choir members and welcome assistants (GAs). It 
 
 ## How it fits together
 
-- **Routing**: expo-router, `src/app/`. `login.tsx` outside the tabs; tabs in `src/app/(app)/`: `index` (home, membership card, flexi ring), `notifications`, `resources` (Music & Lyrics), `account` (membership details + log out), and for GAs `scan` (QR check-in) and `here` (who's here).
+- **Routing**: expo-router, `src/app/`. `login.tsx` outside the tabs; tabs in `src/app/(app)/`: `index` (home, membership card, flexi ring), `notifications`, `resources` (Music & Lyrics), `account` (membership details, log out, delete account – Apple requires in-app deletion), and for GAs `scan` (QR check-in) and `here` (who's here).
 - **API**: always use `api` / `authRequest` from `src/lib/api.ts` and `src/contexts/authContext.tsx`, not plain axios. In development the website address is worked out from the Mac's IP (Expo's `hostUri`) on port 3000; release builds use `EXPO_PUBLIC_BASE_URL`.
 - **Auth**: JWT access token + refresh token from the website (`api/auth/appLogin`, `api/auth/refresh`). Refresh token in `expo-secure-store` (localStorage on web). Role from the profile (`role === 'ga'` shows GA tabs).
 - **Rehearsal / venue** for GA check-ins: `src/contexts/rehearsalContext.tsx` (AsyncStorage).

@@ -15,7 +15,9 @@
 // export default IndexComponent;
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import {
+  Linking,
   View,
   Text,
   Pressable,
@@ -26,12 +28,16 @@ import QRCode from 'react-native-qrcode-svg';
 
 import { useAuth } from '@/contexts/authContext';
 import { FlexiSessionsRing } from '@/components/FlexiSessionsRing';
-import { confirm } from '@/lib/confirm';
+import { confirm, showMessage } from '@/lib/confirm';
 
 const SIGN_IN_HINT_DISMISSED_KEY = 'qrSignInHintDismissed';
 
 // Matches `lightGold` in tailwind.config.js (RefreshControl isn't styled via className).
 const LIGHT_GOLD = 'rgb(222,204,120)';
+
+// "17 October"
+const dayMonth = (iso: string) =>
+  new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' });
 
 const getGreeting = () => {
   const hour = new Date().getHours();
@@ -41,7 +47,25 @@ const getGreeting = () => {
 };
 
 const IndexComponent = () => {
-  const { profile, refreshProfile, signOut } = useAuth();
+  const { profile, refreshProfile, signOut, authRequest } = useAuth();
+  const [isOpeningDirectDebit, setIsOpeningDirectDebit] = useState(false);
+
+  // "Set up a new Direct Debit": the website asks GoCardless for its form
+  // with their details filled in (api/gocardless/restart), and it opens in
+  // the browser. When they finish, the notice goes - pull down to refresh.
+  const openNewDirectDebit = async () => {
+    setIsOpeningDirectDebit(true);
+    try {
+      const { authorisation_url: url } = await authRequest<{
+        authorisation_url: string;
+      }>({ url: '/api/gocardless/restart', method: 'POST' });
+      await Linking.openURL(url);
+    } catch {
+      showMessage("Couldn't start your Direct Debit", 'Please try again.');
+    } finally {
+      setIsOpeningDirectDebit(false);
+    }
+  };
   const [showSignInHint, setShowSignInHint] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -106,6 +130,42 @@ const IndexComponent = () => {
           <Text className="mt-4 text-2xl font-bold text-lightGold">
             {getGreeting()} {profile.first_name}
           </Text>
+          {/* Their Direct Debit has stopped: when, why, and until when their
+              membership is still active (the website's grace period) */}
+          {profile.direct_debit ? (
+            <View className="mt-6 w-11/12 rounded-xl border-2 border-amber-400 p-4">
+              <View className="flex-row items-center">
+                <Ionicons name="alert-circle" size={24} color="#fbbf24" />
+                <Text className="ml-2 text-lg font-bold text-amber-400">
+                  Your Direct Debit has stopped
+                </Text>
+              </View>
+              <Text className="mt-2 text-gray-200">
+                Your Direct Debit was {profile.direct_debit.what_happened} on{' '}
+                {dayMonth(profile.direct_debit.ended_at)}
+                {profile.direct_debit.reason
+                  ? ` (${profile.direct_debit.reason})`
+                  : ''}
+                .{' '}
+                {profile.direct_debit.in_grace_period
+                  ? `Your membership stays active until ${dayMonth(
+                      profile.direct_debit.grace_ends_at
+                    )} - set up a new Direct Debit before then to keep singing without a break.`
+                  : 'Your membership is no longer active. Set up a new Direct Debit, or buy a pack of Flexi sessions, to keep singing.'}
+              </Text>
+              <Pressable
+                onPress={openNewDirectDebit}
+                disabled={isOpeningDirectDebit}
+                className="mt-4 items-center rounded-md bg-lightGold py-3"
+              >
+                <Text className="font-bold text-black">
+                  {isOpeningDirectDebit
+                    ? 'Just a moment...'
+                    : 'Set up a new Direct Debit'}
+                </Text>
+              </Pressable>
+            </View>
+          ) : null}
           {/* Also shown to anyone who owes sessions after paying later */}
           {profile.membership_type === 'flexi' || profile.flexi_sessions < 0 ? (
             <View className="mt-6 items-center justify-center">

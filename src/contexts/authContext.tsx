@@ -32,13 +32,28 @@ const tokenStorage = {
       : SecureStore.deleteItemAsync(key),
 };
 
+// Their Direct Debit has stopped - mirrors DirectDebitNotice in the
+// website's src/lib/directDebit.ts. Dates are ISO strings.
+export interface DirectDebitNotice {
+  ended_at: string;
+  // Their membership stays active until this date (14 days after it stopped)
+  grace_ends_at: string;
+  in_grace_period: boolean;
+  // e.g. "cancelled", "subscription cancelled"
+  what_happened: string;
+  reason: string;
+}
+
 // Matches the website's UserDataType (src/types/types.ts)
 export interface MemberProfile {
   email: string;
   first_name: string;
   last_name: string;
   active_member: boolean;
+  // Direct Debit membership active (including the grace period after it stops)
   active_mandate: boolean;
+  // Set if their Direct Debit has stopped - the home screen shows a notice
+  direct_debit?: DirectDebitNotice | null;
   flexi_sessions: number;
   flexi_type: string;
   membership_type: string;

@@ -28,7 +28,7 @@ import QRCode from 'react-native-qrcode-svg';
 
 import { useAuth } from '@/contexts/authContext';
 import { FlexiSessionsRing } from '@/components/FlexiSessionsRing';
-import { confirm, showMessage } from '@/lib/confirm';
+import { showMessage } from '@/lib/confirm';
 
 const SIGN_IN_HINT_DISMISSED_KEY = 'qrSignInHintDismissed';
 
@@ -47,7 +47,7 @@ const getGreeting = () => {
 };
 
 const IndexComponent = () => {
-  const { profile, refreshProfile, signOut, authRequest } = useAuth();
+  const { profile, refreshProfile, authRequest } = useAuth();
   const [isOpeningDirectDebit, setIsOpeningDirectDebit] = useState(false);
 
   // "Set up a new Direct Debit": the website asks GoCardless for its form
@@ -99,17 +99,6 @@ const IndexComponent = () => {
   const dismissSignInHint = () => {
     setShowSignInHint(false);
     AsyncStorage.setItem(SIGN_IN_HINT_DISMISSED_KEY, 'true');
-  };
-
-  // Ask first - it's at the bottom of a scrolling screen, easy to tap by accident.
-  // (confirm() also works in a web browser, where Alert doesn't.)
-  const confirmSignOut = () => {
-    confirm({
-      title: 'Log out?',
-      message: 'You will need your email and password to log back in.',
-      confirmText: 'Log out',
-      onConfirm: signOut,
-    });
   };
 
   return (
@@ -247,17 +236,10 @@ const IndexComponent = () => {
         </>
       ) : (
         <Text className="mt-8 text-white">
-          Unable to load your membership card. Please try logging in again.
+          Unable to load your membership card. Pull down to try again, or log
+          out and back in from the Account tab.
         </Text>
       )}
-
-      {/* Shown even if the profile didn't load, so they can log in again */}
-      <Pressable
-        onPress={confirmSignOut}
-        className="mt-12 rounded-md border border-lightGold px-8 py-3"
-      >
-        <Text className="text-base font-bold text-lightGold">Log out</Text>
-      </Pressable>
     </ScrollView>
   );
 };

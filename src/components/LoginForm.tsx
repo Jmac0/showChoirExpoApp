@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -27,6 +28,7 @@ const LoginForm = ({
   error,
   isSubmitting,
 }: LoginFormProps) => {
+  const router = useRouter();
   const passwordInput = useRef<TextInput>(null);
   // Which field has focus, to highlight its border in gold
   const [focused, setFocused] = useState<'email' | 'password' | null>(null);
@@ -107,6 +109,17 @@ const LoginForm = ({
         ) : (
           <Text className="text-lg font-bold text-black">Log in</Text>
         )}
+      </Pressable>
+
+      {/* The app's own screen (src/app/forgot-password.tsx) */}
+      <Pressable
+        onPress={() => router.push('/forgot-password')}
+        hitSlop={8}
+        className="mt-5"
+      >
+        <Text className="text-center text-sm text-lightGold underline">
+          Forgot your password?
+        </Text>
       </Pressable>
     </View>
   );

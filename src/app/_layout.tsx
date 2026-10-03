@@ -8,6 +8,7 @@ export default function Layout() {
       <Stack>
         <Stack.Screen name="(app)" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ headerShown: false }} />
+        <Stack.Screen name="forgot-password" options={{ headerShown: false }} />
       </Stack>
     </AuthProvider>
   );

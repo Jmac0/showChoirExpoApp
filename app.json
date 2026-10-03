@@ -1,8 +1,12 @@
 {
   "expo": {
-    "scheme": "acme",
+    "name": "Show Choir",
+    "slug": "show-choir",
+    "version": "1.0.0",
+    "scheme": "showchoir",
     "userInterfaceStyle": "automatic",
-    "orientation": "default",
+    "orientation": "portrait",
+    "icon": "./src/assets/images/icon.png",
     "web": {
       "output": "static",
       "bundler": "metro"
@@ -11,7 +15,16 @@
       [
         "expo-router",
         {
-          "origin": "https://n"
+          "origin": "https://www.show-choir.co.uk"
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./src/assets/images/logo.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#000000"
         }
       ],
       "expo-secure-store",
@@ -29,14 +42,23 @@
         {
           "microphonePermission": false,
           "recordAudioAndroid": false,
-          "enableBackgroundPlayback": false
+          "enableBackgroundPlayback": true
         }
-      ]
+      ],
+      "expo-asset"
     ],
-    "name": "showChoirExpoApp",
-    "slug": "showChoirExpoApp",
     "ios": {
-      "bundleIdentifier": "co.uk.show-choir.showchoir"
+      "bundleIdentifier": "co.uk.show-choir.showchoir",
+      "config": {
+        "usesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "co.uk.showchoir.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./src/assets/images/adaptive-icon.png",
+        "backgroundColor": "#000000"
+      }
     }
   }
 }

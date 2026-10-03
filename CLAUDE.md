@@ -23,7 +23,8 @@ Expo (React Native) app for Show Choir members and welcome assistants (GAs). It 
 - **Only packages included in Expo Go** unless we move to a dev build. Don't add config plugins that only matter for native builds (e.g. expo-sharing's share-into plugin was deliberately left out of `app.json`).
 - React Compiler lint: no reading refs during render (that's why `ScrubBar` uses View responder props, not PanResponder).
 - Phones can't reach `localhost` – anything the website hands out with a localhost address (e.g. MinIO links) won't work on a device.
-- `app.json` still has starter-template leftovers to fix before release: name `showChoirExpoApp`, scheme `acme`, expo-router origin `https://n`; no icon/splash yet.
+- `app.json` is set up for release (name, slug `show-choir`, scheme `showchoir`, portrait, bundle id `co.uk.show-choir.showchoir` – permanent after the first upload, Android package `co.uk.showchoir.app`), but there's **no icon or splash yet** (1024×1024 icon, no transparency).
+- Background playback is on (tracks keep playing with the phone locked, lock-screen controls) – only fully testable in a real build, not Expo Go.
 
 ## Conventions
 

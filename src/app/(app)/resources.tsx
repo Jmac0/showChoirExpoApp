@@ -118,9 +118,15 @@ const MusicScreen = () => {
   useFocusEffect(
     useCallback(() => {
       loadSongs();
-      // Stop the music when leaving the tab
+      // Stop the music when leaving the tab (locking the phone or switching
+      // apps doesn't count - it keeps playing then)
       return () => {
         player.pause();
+        try {
+          player.clearLockScreenControls();
+        } catch {
+          // nothing to clear (e.g. on web)
+        }
         setPlayingId(null);
       };
     }, [loadSongs, player])
@@ -135,8 +141,15 @@ const MusicScreen = () => {
   // --- Remembered part + audio setup ---
 
   useEffect(() => {
-    // Play even with the silent switch on (like the GA scanner's ting)
-    setAudioModeAsync({ playsInSilentMode: true });
+    // Play even with the silent switch on (like the GA scanner's ting), and
+    // keep playing when the phone is locked or they switch to another app -
+    // members practise on the go. (Background playback is switched on in
+    // app.json's expo-audio settings; lock screen controls need "doNotMix".)
+    setAudioModeAsync({
+      playsInSilentMode: true,
+      shouldPlayInBackground: true,
+      interruptionMode: 'doNotMix',
+    });
     AsyncStorage.getItem(PART_KEY).then((saved) => {
       if (saved) setPart(saved as PartFilter);
     });
@@ -149,7 +162,7 @@ const MusicScreen = () => {
 
   // --- Playing ---
 
-  const togglePlay = (track: Track) => {
+  const togglePlay = (song: Song, track: Track) => {
     if (playingId === track.id) {
       // Same track - pause / carry on
       if (status.playing) player.pause();
@@ -159,6 +172,19 @@ const MusicScreen = () => {
     player.replace({ uri: track.url });
     player.play();
     setPlayingId(track.id);
+    // Play/pause on the lock screen, showing what's playing. (Android also
+    // needs this to keep playing for more than a few minutes in the
+    // background.) Not available everywhere (e.g. web), so never let it stop
+    // the music.
+    try {
+      player.setActiveForLockScreen(true, {
+        title: track.label,
+        artist: song.title,
+        albumTitle: 'Show Choir',
+      });
+    } catch {
+      // carry on without lock screen controls
+    }
   };
 
   const openPdf = (track: Track) =>
@@ -238,7 +264,7 @@ const MusicScreen = () => {
                 <View key={track.id} className="border-b border-white/10 py-3">
                   <Pressable
                     onPress={() =>
-                      isAudio ? togglePlay(track) : openPdf(track)
+                      isAudio ? togglePlay(song, track) : openPdf(track)
                     }
                     className="flex-row items-center"
                   >

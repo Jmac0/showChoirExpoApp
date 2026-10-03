@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, Text } from 'react-native';
 
+import { ChangeEmail } from '@/components/ChangeEmail';
+import { ChangePassword } from '@/components/ChangePassword';
 import { DeleteAccount } from '@/components/DeleteAccount';
 import { MembershipDetails } from '@/components/MembershipDetails';
 import { useAuth } from '@/contexts/authContext';
@@ -10,7 +12,8 @@ import { confirm } from '@/lib/confirm';
 const LIGHT_GOLD = 'rgb(222,204,120)';
 
 // Account tab: their membership details (type, Direct Debit status, email -
-// like the website's Account page), logging out, and deleting their account. Notices that need
+// like the website's Account page), changing their password and email,
+// logging out, and deleting their account. Notices that need
 // acting on (Direct Debit stopped, Flexi sessions expiring) stay on the
 // Home tab, next to the membership card, so they're seen.
 const AccountScreen = () => {
@@ -49,7 +52,12 @@ const AccountScreen = () => {
       }
     >
       {profile?.email ? (
-        <MembershipDetails profile={profile} />
+        <>
+          <MembershipDetails profile={profile} />
+          {/* Same order as the website's Account page */}
+          <ChangePassword />
+          <ChangeEmail />
+        </>
       ) : (
         <Text className="mt-8 px-6 text-center text-white">
           Unable to load your account. Pull down to try again.

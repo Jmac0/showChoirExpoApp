@@ -57,6 +57,11 @@ export interface MemberProfile {
   // Whether to show the membership card (QR code) - false once a Direct
   // Debit membership has ended (the website's isMembershipCardActive)
   card_active?: boolean;
+  // Flexi: when their sessions expire, if within a month (the website's
+  // lib/flexiExpiry.ts - 6 months without a check-in)
+  flexi_expiry?: { expires_at: string; in_warning: boolean } | null;
+  // When their Flexi sessions expired (membership_type "flexi_expired")
+  flexi_expired_at?: string | null;
   flexi_sessions: number;
   flexi_type: string;
   membership_type: string;

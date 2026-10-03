@@ -23,6 +23,11 @@ const TabsLayout = () => {
   }
 
   const isGA = profile?.role === 'ga';
+  // Notifications and Music & Lyrics are for active members only - hidden
+  // when the website says their membership isn't active (Direct Debit
+  // stopped over 14 days ago, or Flexi sessions expired). An older website
+  // doesn't say, so show them.
+  const isActiveMember = profile?.card_active !== false;
 
   return (
     // Shares the GA's chosen rehearsal venue between the Scan and Who's here tabs
@@ -76,6 +81,7 @@ const TabsLayout = () => {
           name="notifications"
           options={{
             title: 'Notifications',
+            href: isActiveMember ? undefined : null,
             tabBarIcon: ({ color, focused }) => (
               <TabBarIcon
                 name={focused ? 'bulb' : 'bulb-outline'}
@@ -88,6 +94,7 @@ const TabsLayout = () => {
           name="resources"
           options={{
             title: 'Resources',
+            href: isActiveMember ? undefined : null,
             tabBarIcon: ({ color, focused }) => (
               <TabBarIcon
                 name={focused ? 'musical-note' : 'musical-note-outline'}

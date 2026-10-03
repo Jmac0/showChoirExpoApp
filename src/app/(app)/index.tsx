@@ -166,6 +166,25 @@ const IndexComponent = () => {
               </Pressable>
             </View>
           ) : null}
+          {/* Flexi sessions expire after 6 months without a check-in - warn
+              them from a month before (the website works it out) */}
+          {profile.membership_type === 'flexi' &&
+          profile.flexi_expiry?.in_warning ? (
+            <View className="mt-6 w-11/12 rounded-xl border-2 border-amber-400 p-4">
+              <View className="flex-row items-center">
+                <Ionicons name="time-outline" size={24} color="#fbbf24" />
+                <Text className="ml-2 text-lg font-bold text-amber-400">
+                  Your Flexi sessions expire soon
+                </Text>
+              </View>
+              <Text className="mt-2 text-gray-200">
+                Flexi sessions expire after 6 months without coming to a choir.
+                Your sessions expire on{' '}
+                {dayMonth(profile.flexi_expiry.expires_at)} unless you come
+                along before then.
+              </Text>
+            </View>
+          ) : null}
           {/* Also shown to anyone who owes sessions after paying later */}
           {profile.membership_type === 'flexi' || profile.flexi_sessions < 0 ? (
             <View className="mt-6 items-center justify-center">
@@ -181,9 +200,13 @@ const IndexComponent = () => {
           {profile.card_active === false ? (
             <View className="mt-6 w-11/12 items-center rounded-xl border-2 border-amber-400 p-5">
               <Text className="text-center text-base text-gray-200">
-                Your membership isn&apos;t active at the moment, so your
-                membership card isn&apos;t available. Set up a new Direct Debit
-                to get it back straight away.
+                {profile.membership_type === 'flexi_expired'
+                  ? `Your Flexi sessions expired${
+                      profile.flexi_expired_at
+                        ? ` on ${dayMonth(profile.flexi_expired_at)}`
+                        : ''
+                    } after 6 months without coming to a choir, so your membership card isn't available. Set up a monthly Direct Debit to keep singing - it covers every choir, any week.`
+                  : "Your membership isn't active at the moment, so your membership card isn't available. Set up a new Direct Debit to get it back straight away."}
               </Text>
               {/* The notice above already has the button if their Direct
                   Debit stopped - this is for one that was never set up */}

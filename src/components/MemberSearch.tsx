@@ -54,6 +54,8 @@ function statusOf(member: MemberSearchResult): {
     };
   if (sessions < 0)
     return { text: `Flexi · owes ${-sessions}`, className: 'text-red-400' };
+  if (member.membership_type === 'flexi_expired')
+    return { text: 'Flexi expired', className: 'text-amber-400' };
   return {
     text:
       member.membership_type === 'DD'

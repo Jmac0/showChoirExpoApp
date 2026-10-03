@@ -38,6 +38,7 @@ type Props = {
 // Why they can't just be let in - shown under their name
 //   -2 sessions          -> "Owes 2 sessions"
 //   Direct Debit member  -> "Direct Debit is not active"
+//   Flexi expired        -> "Flexi sessions expired"
 //   otherwise            -> "No sessions left"
 function reason(member: UnpaidMember) {
   if (member.flexi_sessions < 0) {
@@ -45,6 +46,9 @@ function reason(member: UnpaidMember) {
     return `Owes ${owed} session${owed === 1 ? '' : 's'}`;
   }
   if (member.membership_type === 'DD') return 'Direct Debit is not active';
+  // No check-in for 6 months (the website's lib/flexiExpiry.ts)
+  if (member.membership_type === 'flexi_expired')
+    return 'Flexi sessions expired';
   return 'No sessions left';
 }
 

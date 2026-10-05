@@ -44,6 +44,9 @@ type AttendanceEntry = {
   amount?: number;
   // A GA - shown with a gold star, and "GA" instead of their membership type
   is_ga?: boolean;
+  // On a free taster (checked in from "Taster bookings") - shown as "Taster",
+  // and undo goes back to the booked list
+  is_taster?: boolean;
 };
 
 // Badge next to someone's name if they weren't paid up when scanned, showing
@@ -60,6 +63,14 @@ type AttendanceResponse = {
   session_date: string;
   count: number;
   checkins: AttendanceEntry[];
+};
+
+// What's shown under their name. GAs come free, so "GA" rather than how
+// they pay; tasters aren't members yet.
+const membershipLabel = (entry: AttendanceEntry) => {
+  if (entry.is_ga) return 'GA';
+  if (entry.is_taster) return 'Taster';
+  return entry.membership_type === 'flexi' ? 'Flexi' : 'Direct Debit';
 };
 
 const fullName = (entry: AttendanceEntry) =>
@@ -103,11 +114,19 @@ const WhosHereScreen = () => {
 
   const undoCheckIn = async (entry: AttendanceEntry) => {
     try {
-      await authRequest({
-        method: 'POST',
-        url: '/api/member-resources/undo-check-in',
-        data: { checkin_id: entry.id },
-      });
+      await authRequest(
+        entry.is_taster
+          ? {
+              method: 'POST',
+              url: '/api/member-resources/taster-check-in',
+              data: { booking_id: entry.id, undo: true },
+            }
+          : {
+              method: 'POST',
+              url: '/api/member-resources/undo-check-in',
+              data: { checkin_id: entry.id },
+            }
+      );
     } catch {
       showMessage("Couldn't undo", 'Please try again.');
     }
@@ -137,8 +156,9 @@ const WhosHereScreen = () => {
   const confirmUndo = (entry: AttendanceEntry) => {
     confirm({
       title: `Undo ${fullName(entry)}'s check-in?`,
-      message:
-        'They will be removed from this list. Any session used is given back, and any payment taken at the desk is removed.',
+      message: entry.is_taster
+        ? 'They go back to the booked list on Taster bookings.'
+        : 'They will be removed from this list. Any session used is given back, and any payment taken at the desk is removed.',
       confirmText: 'Undo check-in',
       onConfirm: () => undoCheckIn(entry),
     });
@@ -192,7 +212,7 @@ const WhosHereScreen = () => {
                 {current?.count ?? '–'}
               </Text>
               <Text className="mb-4 text-center text-base text-white">
-                scanned in
+                here
               </Text>
               {error ? (
                 <Text className="mb-3 rounded-md bg-amber-500 px-3 py-2 text-center font-bold text-white">
@@ -233,13 +253,9 @@ const WhosHereScreen = () => {
                 <View className="flex-row items-center">
                   {/* GAs come free, so show "GA" rather than how they pay */}
                   <Text
-                    className={`text-sm ${item.is_ga ? 'text-lightGold' : 'text-gray-400'}`}
+                    className={`text-sm ${item.is_ga || item.is_taster ? 'text-lightGold' : 'text-gray-400'}`}
                   >
-                    {item.is_ga
-                      ? 'GA'
-                      : item.membership_type === 'flexi'
-                        ? 'Flexi'
-                        : 'Direct Debit'}
+                    {membershipLabel(item)}
                   </Text>
                   {/* Cash / Card / Pay later badge, if they paid at the desk */}
                   {item.payment ? (

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
 import { Redirect, Tabs } from 'expo-router';
+import { StaffMenu } from '@/components/StaffMenu';
 import { TabBarIcon } from '@/components/TabBarIcon';
 import { useAuth } from '@/contexts/authContext';
 import { RehearsalProvider } from '@/contexts/rehearsalContext';
@@ -22,7 +23,6 @@ const TabsLayout = () => {
     return <Redirect href="/login" />;
   }
 
-  const isGA = profile?.role === 'ga';
   // Notifications and Music & Lyrics are for active members only - hidden
   // when the website says their membership isn't active (Direct Debit
   // stopped over 14 days ago, or Flexi sessions expired). An older website
@@ -30,12 +30,16 @@ const TabsLayout = () => {
   const isActiveMember = profile?.card_active !== false;
 
   return (
-    // Shares the GA's chosen rehearsal venue between the Scan and Who's here tabs
+    // Shares the GA's chosen rehearsal venue between the Scan and Who's here
+    // screens
     <RehearsalProvider>
       <Tabs
         screenOptions={{
           tabBarActiveTintColor: LIGHT_GOLD,
           headerStyle: { backgroundColor: LIGHT_GOLD },
+          // GA / admin screens are in a menu (top right) instead of the tab
+          // bar, so it isn't crowded - only shown to those who have any
+          headerRight: () => <StaffMenu />,
         }}
       >
         <Tabs.Screen
@@ -54,8 +58,9 @@ const TabsLayout = () => {
           name="scan"
           options={{
             title: 'Scan Members',
-            // Only GAs get the scanner; href: null hides the tab for everyone else.
-            href: isGA ? undefined : null,
+            // Never in the tab bar - GAs open it from the staff menu
+            // (components/StaffMenu.tsx)
+            href: null,
             tabBarIcon: ({ color, focused }) => (
               <TabBarIcon
                 name={focused ? 'scan' : 'scan-outline'}
@@ -68,13 +73,22 @@ const TabsLayout = () => {
           name="here"
           options={{
             title: "Who's here",
-            href: isGA ? undefined : null,
+            // In the staff menu, not the tab bar
+            href: null,
             tabBarIcon: ({ color, focused }) => (
               <TabBarIcon
                 name={focused ? 'people' : 'people-outline'}
                 color={color}
               />
             ),
+          }}
+        />
+        <Tabs.Screen
+          name="tasters"
+          options={{
+            title: 'Taster bookings',
+            // In the staff menu, not the tab bar
+            href: null,
           }}
         />
         <Tabs.Screen

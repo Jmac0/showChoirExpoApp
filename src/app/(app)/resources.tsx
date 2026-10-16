@@ -10,6 +10,7 @@ import {
   useAudioPlayer,
   useAudioPlayerStatus,
 } from 'expo-audio';
+import { isRunningInExpoGo } from 'expo';
 import { File, Paths } from 'expo-file-system';
 import { useFocusEffect } from 'expo-router';
 import * as Sharing from 'expo-sharing';
@@ -27,6 +28,12 @@ import {
 import { ScrubBar } from '@/components/ScrubBar';
 import { useAuth } from '@/contexts/authContext';
 import { showMessage } from '@/lib/confirm';
+
+// Running in Expo Go (development), not our own build. Expo Go ignores
+// app.json's expo-audio settings, so on Android the lock screen controls
+// can't start there and expo-audio logs an error - only our real builds
+// (EAS) have them.
+const IN_EXPO_GO = isRunningInExpoGo();
 
 // Matches `lightGold` in tailwind.config.js (icons/spinner aren't styled via className)
 const LIGHT_GOLD = 'rgb(222,204,120)';
@@ -174,8 +181,9 @@ const MusicScreen = () => {
     setPlayingId(track.id);
     // Play/pause on the lock screen, showing what's playing. (Android also
     // needs this to keep playing for more than a few minutes in the
-    // background.) Not available everywhere (e.g. web), so never let it stop
-    // the music.
+    // background.) Not available everywhere (e.g. web, Expo Go), so never
+    // let it stop the music.
+    if (IN_EXPO_GO) return;
     try {
       player.setActiveForLockScreen(true, {
         title: track.label,

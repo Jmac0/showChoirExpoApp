@@ -1,0 +1,26 @@
+{
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_BASE_URL": "https://showchoirnextjs-git-dev-jmac0s-projects.vercel.app"
+      }
+    },
+    "production": {
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_BASE_URL": "https://www.show-choir.co.uk"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

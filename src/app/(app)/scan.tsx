@@ -20,6 +20,7 @@
 // to the website's record-payment endpoint, which checks them in.
 
 import Ionicons from '@expo/vector-icons/Ionicons';
+import axios from 'axios';
 import { setAudioModeAsync, useAudioPlayer } from 'expo-audio';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useFocusEffect, useIsFocused } from 'expo-router';
@@ -35,6 +36,10 @@ import {
   type DeskPayment,
   type UnpaidMember,
 } from '@/components/PaymentDrawer';
+import {
+  ConfirmSessionsSheet,
+  type MemberToConfirm,
+} from '@/components/ConfirmSessionsSheet';
 import { ScanResultToast, type ScanToast } from '@/components/ScanResultToast';
 import { VenueBar } from '@/components/VenueBar';
 import { useAuth } from '@/contexts/authContext';
@@ -57,6 +62,9 @@ const LIGHT_GOLD = 'rgb(222,204,120)';
 //   already_checked_in - already scanned in at this rehearsal, not charged again
 //   no_sessions        - not paid up (no mandate, 0 or fewer flexi sessions) -
 //                        opens the PaymentDrawer
+//   confirm_sessions   - a Flexi member brought over from paper whose
+//                        sessions haven't been entered yet - opens the
+//                        ConfirmSessionsSheet (nothing recorded yet)
 //   not_found          - no member with that email
 type CheckInResponse = {
   status:
@@ -65,6 +73,7 @@ type CheckInResponse = {
     | 'flexi'
     | 'already_checked_in'
     | 'no_sessions'
+    | 'confirm_sessions'
     | 'not_found';
   first_name?: string;
   last_name?: string;
@@ -138,6 +147,13 @@ function toToast(result: CheckInResponse): ScanToast {
     // fallback so every status has a toast.
     case 'no_sessions':
       return { variant: 'error', title: 'No sessions left', message: name };
+    // Normally opens the ConfirmSessionsSheet instead (see checkInEmail)
+    case 'confirm_sessions':
+      return {
+        variant: 'warning',
+        title: 'Sessions still on paper',
+        message: name,
+      };
     default:
       return { variant: 'error', title: 'Member not found' };
   }
@@ -213,7 +229,10 @@ const ScanScreen = () => {
   const ting = useAudioPlayer(require('@/assets/sounds/ting.wav'));
   // Someone scanned who isn't paid up - shows the PaymentDrawer
   const [unpaid, setUnpaid] = useState<UnpaidMember | null>(null);
-  // True while a drawer choice is being sent to the website
+  // A Flexi member whose sessions are still on paper - shows the
+  // ConfirmSessionsSheet
+  const [toConfirm, setToConfirm] = useState<MemberToConfirm | null>(null);
+  // True while a drawer / sheet choice is being sent to the website
   const [isSaving, setIsSaving] = useState(false);
 
   // --- Setup / cleanup ---
@@ -248,6 +267,15 @@ const ScanScreen = () => {
       method: 'POST',
       url: '/api/member-resources/record-payment',
       data: { email, venue: venueSlug, payment },
+    });
+
+  // Saves the sessions a GA entered from a member's paper record (added to
+  // their balance). Throws if it fails.
+  const confirmSessions = (email: string, sessions: number) =>
+    authRequest<{ flexi_sessions: number }>({
+      method: 'POST',
+      url: '/api/member-resources/confirm-flexi-sessions',
+      data: { email, sessions },
     });
 
   // --- Showing a result ---
@@ -319,6 +347,13 @@ const ScanScreen = () => {
     if (!venue) return;
     try {
       const response = await checkIn(email, venue.slug);
+
+      // Sessions still on paper - ask the GA for them first. Scanning stays
+      // paused (isBusy) until they've entered them or cancelled.
+      if (response.status === 'confirm_sessions') {
+        setToConfirm({ email, name: fullName(response) });
+        return;
+      }
 
       // Not paid up - open the drawer and wait for the GA to choose.
       // Scanning stays paused (isBusy) until they do.
@@ -392,8 +427,8 @@ const ScanScreen = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const handleSearchCheckIn = async (member: MemberSearchResult) => {
-    // Not while the payment drawer is open for someone else
-    if (unpaid || !venue) return;
+    // Not while the payment drawer / sessions sheet is open for someone else
+    if (unpaid || toConfirm || !venue) return;
     // Replace any result still showing from the last scan
     isBusy.current = true;
     clearTimeout(resetTimer.current);
@@ -401,6 +436,48 @@ const ScanScreen = () => {
     await checkInEmail(member.email);
     // If the GA found themselves, hide "Check myself in"
     if (member.email === profile?.email) loadSelfStatus();
+  };
+
+  // --- Handle the sessions sheet ---
+
+  // The GA entered the sessions from the paper record: save them, then check
+  // the member in again - now it works like any Flexi member (uses a session,
+  // or opens the payment drawer if they have none).
+  const handleConfirmSessions = async (sessions: number) => {
+    if (!toConfirm) return;
+    const { email } = toConfirm;
+    setIsSaving(true);
+    try {
+      await confirmSessions(email, sessions);
+    } catch (error) {
+      // 409: another GA entered them a moment ago - just carry on
+      if (!axios.isAxiosError(error) || error.response?.status !== 409) {
+        setIsSaving(false);
+        setToConfirm(null);
+        showResult(
+          {
+            variant: 'error',
+            title: "Couldn't save their sessions",
+            message: 'Please scan them again',
+          },
+          false
+        );
+        return;
+      }
+    }
+    setIsSaving(false);
+    setToConfirm(null);
+    await checkInEmail(email);
+  };
+
+  // "Cancel - don't check in": nothing was saved or recorded
+  const handleCancelConfirm = () => {
+    const name = toConfirm?.name;
+    setToConfirm(null);
+    showResult(
+      { variant: 'error', title: 'Not checked in', message: name },
+      false
+    );
   };
 
   // --- Handle the payment drawer ---
@@ -538,6 +615,15 @@ const ScanScreen = () => {
         isSaving={isSaving}
         onChoose={handlePayment}
         onCancel={handleCancelPayment}
+      />
+
+      {/* Slides up the first time a Flexi member brought over from paper is
+          scanned, for the GA to enter their sessions */}
+      <ConfirmSessionsSheet
+        member={isFocused ? toConfirm : null}
+        isSaving={isSaving}
+        onConfirm={handleConfirmSessions}
+        onCancel={handleCancelConfirm}
       />
 
       {/* "Search by name" panel - closes itself when a member is picked */}

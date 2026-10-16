@@ -63,6 +63,10 @@ export interface MemberProfile {
   // When their Flexi sessions expired (membership_type "flexi_expired")
   flexi_expired_at?: string | null;
   flexi_sessions: number;
+  // False for a Flexi member brought over from paper whose sessions haven't
+  // been entered yet - the welcome desk does it at their next rehearsal
+  // (missing from an older website - treat as confirmed)
+  flexi_sessions_confirmed?: boolean;
   flexi_type: string;
   membership_type: string;
   // "ga" (glamorous assistant) unlocks the member-scanning tab

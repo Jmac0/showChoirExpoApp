@@ -174,8 +174,26 @@ const IndexComponent = () => {
               </Text>
             </View>
           ) : null}
+          {/* Brought over from the paper records and not entered yet */}
+          {profile.flexi_sessions_confirmed === false ? (
+            <View className="mt-6 w-11/12 items-center rounded-xl border-2 border-lightGold/70 p-5">
+              <Text className="text-center text-lg font-bold text-lightGold">
+                Your Flexi sessions
+              </Text>
+              <Text className="mt-2 text-center text-base text-gray-200">
+                To be confirmed at your next rehearsal - show your card at the
+                welcome desk and they&apos;ll add the sessions you have left
+                from our records.
+                {profile.flexi_sessions > 0
+                  ? ` (Plus the ${profile.flexi_sessions} you've bought since.)`
+                  : ''}
+              </Text>
+            </View>
+          ) : null}
           {/* Also shown to anyone who owes sessions after paying later */}
-          {profile.membership_type === 'flexi' || profile.flexi_sessions < 0 ? (
+          {profile.flexi_sessions_confirmed !== false &&
+          (profile.membership_type === 'flexi' ||
+            profile.flexi_sessions < 0) ? (
             <View className="mt-6 items-center justify-center">
               <FlexiSessionsRing remaining={profile.flexi_sessions} />
             </View>

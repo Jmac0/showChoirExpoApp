@@ -1,9 +1,12 @@
 // GA-only "Taster bookings" screen (in the staff menu): people who booked a
 // free taster at the selected choir with the website's "Book a taster" form.
 // The form only asks which choir, so this lists the last 8 weeks' bookings
-// that haven't come yet - tap someone to check them in as a taster attendee
-// (they move to "Here today", and appear on "Who's here" too). Long-press a
-// check-in to undo it.
+// that haven't come yet, who's here today, and who came to an earlier
+// rehearsal - tap a booking to check them in as a taster attendee (they move
+// to "Here today", and appear on "Who's here" too). Long-press a
+// check-in to undo it (today's only). Once someone's been checked in, the
+// Email button sends them the "great to meet you - here's how to join" email
+// (the website's TasterFollowUpEmail).
 //
 // Keeps itself up to date while open (polls, plus pull to refresh), so it
 // picks up check-ins made on other GAs' phones.
@@ -40,11 +43,17 @@ type TasterBooking = {
   booked_at: string;
   // Checked in at today's rehearsal here: when
   attended_at: string | null;
+  // The rehearsal's UK date they came to, "YYYY-MM-DD"
+  attended_date: string | null;
+  // When the follow-up email was last sent, if it has been
+  follow_up_sent_at: string | null;
 };
 
 type TasterBookingsResponse = {
   venue: string;
   choir: string;
+  // UK date of today's rehearsal, "YYYY-MM-DD"
+  today: string;
   weeks: number;
   bookings: TasterBooking[];
 };
@@ -138,6 +147,34 @@ const TastersScreen = () => {
       onConfirm: () => send(booking, false),
     });
 
+  // The follow-up email - asks first, and warns if it's already been sent
+  const sendEmail = async (booking: TasterBooking) => {
+    setSavingId(booking.id);
+    try {
+      const { message } = await authRequest<{ message: string }>({
+        method: 'POST',
+        url: '/api/member-resources/taster-email',
+        data: { booking_id: booking.id },
+      });
+      showMessage('Email sent', message);
+    } catch {
+      showMessage("Couldn't send the email", 'Please try again.');
+    } finally {
+      setSavingId(null);
+    }
+    load();
+  };
+
+  const confirmEmail = (booking: TasterBooking) =>
+    confirm({
+      title: booking.follow_up_sent_at
+        ? `Already emailed on ${bookedOn(booking.follow_up_sent_at)} - send again?`
+        : `Email ${booking.first_name}?`,
+      message: `Sends the "great to meet you - here's how to join" email to ${booking.email}.`,
+      confirmText: 'Send',
+      onConfirm: () => sendEmail(booking),
+    });
+
   const confirmUndo = (booking: TasterBooking) =>
     confirm({
       title: `Undo ${fullName(booking)}'s check-in?`,
@@ -163,11 +200,21 @@ const TastersScreen = () => {
   const matching = (current?.bookings ?? []).filter((booking) =>
     `${fullName(booking)} ${booking.email}`.toLowerCase().includes(query)
   );
+  // Not come yet / checked in tonight / came to an earlier rehearsal
   const booked = matching.filter((booking) => !booking.attended_at);
-  const hereToday = matching.filter((booking) => booking.attended_at);
+  const hereToday = matching.filter(
+    (booking) => booking.attended_at && booking.attended_date === current?.today
+  );
+  const cameEarlier = matching
+    .filter(
+      (booking) =>
+        booking.attended_at && booking.attended_date !== current?.today
+    )
+    .sort((a, b) => String(b.attended_at).localeCompare(String(a.attended_at)));
   const sections = [
     { title: 'Booked', data: booked },
     { title: 'Here today', data: hereToday },
+    { title: 'Came earlier', data: cameEarlier },
   ].filter((section) => section.data.length);
 
   return (
@@ -233,13 +280,15 @@ const TastersScreen = () => {
               {section.title}
             </Text>
           )}
-          // --- One row per booking: tap to check in, long-press to undo ---
+          // --- One row per booking: tap to check in, long-press to undo
+          // (today's check-ins only), Email once they've been ---
           renderItem={({ item }) => {
-            const isHere = !!item.attended_at;
+            const hasCome = !!item.attended_at;
+            const isToday = hasCome && item.attended_date === current?.today;
             return (
               <Pressable
-                onPress={() => (isHere ? undefined : confirmCheckIn(item))}
-                onLongPress={() => (isHere ? confirmUndo(item) : undefined)}
+                onPress={() => (hasCome ? undefined : confirmCheckIn(item))}
+                onLongPress={() => (isToday ? confirmUndo(item) : undefined)}
                 disabled={savingId === item.id}
                 className="mx-4 flex-row items-center justify-between border-b border-white/10 py-3"
               >
@@ -248,16 +297,47 @@ const TastersScreen = () => {
                   <Text className="text-sm text-gray-400">
                     {item.email} · booked {bookedOn(item.booked_at)}
                   </Text>
+                  {item.follow_up_sent_at ? (
+                    <Text className="text-xs text-lightGold">
+                      Emailed {bookedOn(item.follow_up_sent_at)}
+                    </Text>
+                  ) : null}
                 </View>
-                {isHere ? (
+                {/* Follow-up email ("great to meet you - here's how to
+                    join") - only once they've been checked in */}
+                {hasCome ? (
+                  <Pressable
+                    onPress={() => confirmEmail(item)}
+                    disabled={savingId === item.id}
+                    hitSlop={6}
+                    accessibilityLabel={`Email ${fullName(item)}`}
+                    className="mr-2 rounded-md border border-lightGold/60 p-1.5"
+                  >
+                    <Ionicons
+                      name={
+                        item.follow_up_sent_at
+                          ? 'mail-open-outline'
+                          : 'mail-outline'
+                      }
+                      size={20}
+                      color={LIGHT_GOLD}
+                    />
+                  </Pressable>
+                ) : null}
+                {hasCome ? (
+                  // When they came: "19:42" tonight, "28 Sep" earlier
                   <View className="flex-row items-center">
                     <Ionicons
                       name="checkmark-circle"
                       size={22}
-                      color="#4ade80"
+                      color={isToday ? '#4ade80' : '#9ca3af'}
                     />
-                    <Text className="ml-1 text-base text-green-400">
-                      {timeOf(item.attended_at as string)}
+                    <Text
+                      className={`ml-1 text-base ${isToday ? 'text-green-400' : 'text-gray-400'}`}
+                    >
+                      {isToday
+                        ? timeOf(item.attended_at as string)
+                        : bookedOn(item.attended_at as string)}
                     </Text>
                   </View>
                 ) : (
@@ -280,9 +360,10 @@ const TastersScreen = () => {
             ) : null
           }
           ListFooterComponent={
-            hereToday.length ? (
-              <Text className="mb-8 mt-4 text-center text-xs text-gray-500">
-                Long-press someone who&apos;s here to undo their check-in
+            hereToday.length || cameEarlier.length ? (
+              <Text className="mb-8 mt-4 px-6 text-center text-xs text-gray-500">
+                ✉ sends the &ldquo;great to meet you&rdquo; email. Long-press
+                someone who&apos;s here today to undo their check-in.
               </Text>
             ) : null
           }

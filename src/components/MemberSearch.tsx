@@ -5,7 +5,6 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Modal,
-  Platform,
   Pressable,
   Text,
   TextInput,
@@ -147,7 +146,7 @@ export function MemberSearch({ visible, onClose, onCheckIn }: Props) {
     >
       <KeyboardAvoidingView
         className="flex-1 justify-end bg-black/60"
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior="padding"
       >
         <View className="max-h-[85%] min-h-[60%] rounded-t-2xl bg-lightBlack pb-8">
           {/* --- Header --- */}

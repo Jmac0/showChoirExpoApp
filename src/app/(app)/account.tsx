@@ -1,5 +1,11 @@
 import { useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, Text } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  Text,
+} from 'react-native';
 
 import { ChangeEmail } from '@/components/ChangeEmail';
 import { ChangePassword } from '@/components/ChangePassword';
@@ -39,42 +45,49 @@ const AccountScreen = () => {
   };
 
   return (
-    <ScrollView
-      className="flex-1 bg-lightBlack"
-      contentContainerClassName="items-center pb-10 pt-4"
-      refreshControl={
-        <RefreshControl
-          refreshing={isRefreshing}
-          onRefresh={onRefresh}
-          tintColor={LIGHT_GOLD}
-          colors={[LIGHT_GOLD]}
-        />
-      }
-    >
-      {profile?.email ? (
-        <>
-          <MembershipDetails profile={profile} />
-          {/* Same order as the website's Account page */}
-          <ChangePassword />
-          <ChangeEmail />
-        </>
-      ) : (
-        <Text className="mt-8 px-6 text-center text-white">
-          Unable to load your account. Pull down to try again.
-        </Text>
-      )}
-
-      {/* Shown even if the profile didn't load, so they can log in again */}
-      <Pressable
-        onPress={confirmSignOut}
-        className="mt-12 rounded-md border border-lightGold px-8 py-3"
+    // Shrinks the screen above the keyboard, so the password and email boxes
+    // (change password / email, and delete account's password, far down)
+    // aren't hidden behind it - Android doesn't do this itself in an
+    // edge-to-edge Expo app (see login.tsx). The scroll view then keeps the
+    // box being typed in on screen.
+    <KeyboardAvoidingView className="flex-1 bg-lightBlack" behavior="padding">
+      <ScrollView
+        className="flex-1 bg-lightBlack"
+        contentContainerClassName="items-center pb-10 pt-4"
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={onRefresh}
+            tintColor={LIGHT_GOLD}
+            colors={[LIGHT_GOLD]}
+          />
+        }
       >
-        <Text className="text-base font-bold text-lightGold">Log out</Text>
-      </Pressable>
+        {profile?.email ? (
+          <>
+            <MembershipDetails profile={profile} />
+            {/* Same order as the website's Account page */}
+            <ChangePassword />
+            <ChangeEmail />
+          </>
+        ) : (
+          <Text className="mt-8 px-6 text-center text-white">
+            Unable to load your account. Pull down to try again.
+          </Text>
+        )}
 
-      {/* Permanently delete their account (only once it's loaded) */}
-      {profile?.email ? <DeleteAccount /> : null}
-    </ScrollView>
+        {/* Shown even if the profile didn't load, so they can log in again */}
+        <Pressable
+          onPress={confirmSignOut}
+          className="mt-12 rounded-md border border-lightGold px-8 py-3"
+        >
+          <Text className="text-base font-bold text-lightGold">Log out</Text>
+        </Pressable>
+
+        {/* Permanently delete their account (only once it's loaded) */}
+        {profile?.email ? <DeleteAccount /> : null}
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 

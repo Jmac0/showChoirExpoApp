@@ -5,7 +5,6 @@ import {
   ActivityIndicator,
   Image,
   KeyboardAvoidingView,
-  Platform,
   Pressable,
   ScrollView,
   Text,
@@ -55,11 +54,11 @@ export default function ForgotPassword() {
   };
 
   return (
-    // Moves the form up out of the way when the keyboard opens
-    <KeyboardAvoidingView
-      className="flex-1 bg-lightBlack"
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
+    // Moves the form up out of the way when the keyboard opens. "padding" on
+    // Android too: Expo apps are edge-to-edge there, so Android no longer
+    // shrinks the screen for the keyboard itself - without it the keyboard
+    // covered the password field.
+    <KeyboardAvoidingView className="flex-1 bg-lightBlack" behavior="padding">
       <ScrollView
         contentContainerClassName="flex-grow items-center justify-center px-8 py-16"
         keyboardShouldPersistTaps="handled"

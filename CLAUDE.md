@@ -22,6 +22,7 @@ Expo (React Native) app for Show Choir members and welcome assistants (GAs). It 
 ## Gotchas
 
 - **Only packages included in Expo Go** unless we move to a dev build. Don't add config plugins that only matter for native builds (e.g. expo-sharing's share-into plugin was deliberately left out of `app.json`).
+- **Keyboard on Android**: Expo apps are edge-to-edge, so Android no longer shrinks the screen when the keyboard opens – any screen with a text box needs `KeyboardAvoidingView behavior="padding"` on **both** platforms (not `undefined` on Android), around its ScrollView, or the keyboard covers the box (see `login.tsx`, `account.tsx`).
 - React Compiler lint: no reading refs during render (that's why `ScrubBar` uses View responder props, not PanResponder).
 - Phones can't reach `localhost` – anything the website hands out with a localhost address (e.g. MinIO links) won't work on a device.
 - `app.json` is set up for release (name, slug `show-choir`, scheme `showchoir`, portrait, bundle id `co.uk.show-choir.showchoir` – permanent after the first upload, Android package `co.uk.showchoir.app`). Icon `src/assets/images/icon.png` (1024×1024, must have no transparency for Apple), Android `adaptive-icon.png`, splash is `logo.png` on black.

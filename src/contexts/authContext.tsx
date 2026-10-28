@@ -68,6 +68,9 @@ export interface MemberProfile {
   // (missing from an older website - treat as confirmed)
   flexi_sessions_confirmed?: boolean;
   flexi_type: string;
+  // Price of their next Flexi pack of 10, in pounds - the "Buy 10 more
+  // sessions" button (missing from an older website)
+  flexi_pack_price?: number;
   membership_type: string;
   // "ga" (glamorous assistant) unlocks the member-scanning tab
   role: string;

@@ -27,6 +27,7 @@ import {
 import QRCode from 'react-native-qrcode-svg';
 
 import { useAuth } from '@/contexts/authContext';
+import { BuyFlexiSessions } from '@/components/BuyFlexiSessions';
 import { FlexiSessionsRing } from '@/components/FlexiSessionsRing';
 import { showMessage } from '@/lib/confirm';
 
@@ -197,6 +198,14 @@ const IndexComponent = () => {
             <View className="mt-6 items-center justify-center">
               <FlexiSessionsRing remaining={profile.flexi_sessions} />
             </View>
+          ) : null}
+          {/* Running low (2 or fewer, or owing some): buy another pack in
+              the app. Only Flexi members can buy packs (the website's
+              canBuyFlexi), and not before their paper sessions are entered */}
+          {profile.membership_type === 'flexi' &&
+          profile.flexi_sessions_confirmed !== false &&
+          profile.flexi_sessions <= 2 ? (
+            <BuyFlexiSessions />
           ) : null}
           <Text className="mt-6 text-center text-xl font-bold text-lightGold">
             Membership Card

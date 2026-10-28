@@ -45,7 +45,14 @@
           "enableBackgroundPlayback": true
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "merchant.co.uk.show-choir",
+          "enableGooglePay": true
+        }
+      ]
     ],
     "ios": {
       "bundleIdentifier": "co.uk.show-choir.showchoir",

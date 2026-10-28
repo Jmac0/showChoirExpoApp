@@ -8,6 +8,8 @@ import {
   View,
 } from 'react-native';
 
+import { PasswordInput } from '@/components/PasswordInput';
+
 type LoginFormProps = {
   handleChange: (name: string, value: string) => void;
   handleLogin: () => void;
@@ -19,8 +21,7 @@ type LoginFormProps = {
 // aren't styled via className).
 const LIGHT_GOLD = 'rgb(222,204,120)';
 
-const inputClass =
-  'mt-2 rounded-lg border bg-white/10 px-4 py-3 text-base text-white';
+const boxClass = 'rounded-lg border bg-white/10 px-4 py-3 text-base text-white';
 
 const LoginForm = ({
   handleChange,
@@ -52,7 +53,7 @@ const LoginForm = ({
         placeholder="you@example.com"
         placeholderTextColor="#6b7280"
         selectionColor={LIGHT_GOLD}
-        className={`${inputClass} ${borderFor('email')}`}
+        className={`mt-2 ${boxClass} ${borderFor('email')}`}
         onFocus={() => setFocused('email')}
         onBlur={() => setFocused(null)}
         onChangeText={(value) => handleChange('email', value)}
@@ -65,18 +66,17 @@ const LoginForm = ({
       <Text className="mt-6 text-sm font-bold uppercase tracking-widest text-lightGold">
         Password
       </Text>
-      <TextInput
+      {/* With the eye button to show / hide what's typed */}
+      <PasswordInput
         ref={passwordInput}
-        autoCapitalize="none"
-        autoCorrect={false}
         autoComplete="current-password"
         textContentType="password"
         returnKeyType="go"
         placeholder="Password"
         placeholderTextColor="#6b7280"
         selectionColor={LIGHT_GOLD}
-        secureTextEntry
-        className={`${inputClass} ${borderFor('password')}`}
+        containerClassName="mt-2"
+        className={`${boxClass} ${borderFor('password')}`}
         onFocus={() => setFocused('password')}
         onBlur={() => setFocused(null)}
         onChangeText={(value) => handleChange('password', value)}

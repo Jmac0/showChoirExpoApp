@@ -1,8 +1,9 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { isAxiosError } from 'axios';
 import { useState } from 'react';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
+import { PasswordInput } from '@/components/PasswordInput';
 import { useAuth } from '@/contexts/authContext';
 import { confirm, showMessage } from '@/lib/confirm';
 
@@ -91,11 +92,9 @@ export function DeleteAccount() {
             </Text>
           ) : null}
           <Text className="mb-1 text-base text-gray-800">Your password</Text>
-          <TextInput
+          <PasswordInput
             value={password}
             onChangeText={setPassword}
-            secureTextEntry
-            autoCapitalize="none"
             autoComplete="current-password"
             className="rounded-md border-2 border-red-500/60 bg-white px-3 py-2 text-base text-black"
           />

@@ -3,6 +3,7 @@ import { isAxiosError } from 'axios';
 import { useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 
+import { PasswordInput } from '@/components/PasswordInput';
 import { useAuth } from '@/contexts/authContext';
 import { showMessage } from '@/lib/confirm';
 
@@ -94,11 +95,9 @@ export function ChangeEmail() {
             className={INPUT}
           />
           <Text className="mb-1 mt-3 text-sm text-gray-300">Your password</Text>
-          <TextInput
+          <PasswordInput
             value={password}
             onChangeText={setPassword}
-            secureTextEntry
-            autoCapitalize="none"
             autoComplete="current-password"
             className={INPUT}
           />

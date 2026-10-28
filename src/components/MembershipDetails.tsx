@@ -68,7 +68,17 @@ export function MembershipDetails({ profile }: { profile: MemberProfile }) {
     <View className="mt-4 w-11/12 rounded-xl border-2 border-lightGold bg-lightBlack p-5">
       <View className="mb-1 flex-row items-center justify-center">
         <FontAwesome5 name="id-card" size={18} color={LIGHT_GOLD} solid />
-        <Text className="ml-3 text-lg font-bold text-lightGold">
+        {/* On some Android phones (seen on a Motorola) bold text is measured
+            a little too narrow, so "membership" wrapped onto a hidden second
+            line and only "Your" showed. textBreakStrategy="simple" makes the
+            second line show; numberOfLines + adjustsFontSizeToFit keep it on
+            one line, shrinking the text a touch if it really doesn't fit. */}
+        <Text
+          className="ml-3 text-lg font-bold text-lightGold"
+          textBreakStrategy="simple"
+          numberOfLines={1}
+          adjustsFontSizeToFit
+        >
           Your membership
         </Text>
       </View>

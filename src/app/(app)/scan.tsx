@@ -94,10 +94,12 @@ type CheckInResponse = {
 // Mirrors RecordPaymentResponse in the website's api/member-resources/record-payment.ts
 //   paid               - cash/card recorded, pack of 10 added, checked in
 //   pay_later          - checked in on credit, balance went down by 1
+//   not_paid           - not a Flexi member, checked in anyway, nothing paid
 //   already_checked_in - already here at this rehearsal, nothing recorded
 //   not_found          - no member with that email
 type RecordPaymentResponse = {
-  status: 'paid' | 'pay_later' | 'already_checked_in' | 'not_found';
+  status:
+    'paid' | 'pay_later' | 'not_paid' | 'already_checked_in' | 'not_found';
   first_name?: string;
   last_name?: string;
   flexi_sessions?: number;
@@ -181,6 +183,8 @@ function toPaymentToast(
         title: `Pay later · ${sessionsLeft(result.flexi_sessions)}`,
         message: name,
       };
+    case 'not_paid':
+      return { variant: 'warning', title: 'In · not paid', message: name };
     case 'already_checked_in':
       return {
         variant: 'warning',
@@ -482,17 +486,18 @@ const ScanScreen = () => {
 
   // --- Handle the payment drawer ---
 
-  // Cash / card / pay later - all of them check the member in.
+  // Cash / card / pay later / check in anyway - all of them check the
+  // member in.
   const handlePayment = async (payment: DeskPayment) => {
     if (!unpaid || !venue) return;
     // Shows a spinner and stops the buttons being tapped twice
     setIsSaving(true);
     try {
       const response = await recordPayment(unpaid.email, venue.slug, payment);
-      // Ting for paid and pay later - either way they're let in.
+      // Ting whenever they're let in, paid or not.
       showResult(
         toPaymentToast(response, payment),
-        response.status === 'paid' || response.status === 'pay_later'
+        ['paid', 'pay_later', 'not_paid'].includes(response.status)
       );
     } catch {
       // Nothing was recorded - they can be scanned again.

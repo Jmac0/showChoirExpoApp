@@ -1,8 +1,9 @@
 import { ActivityIndicator, Modal, Pressable, Text, View } from 'react-native';
 
-// The three choices in the drawer. Matches the website's record-payment
-// endpoint and the "payment" saved on each check-in.
-export type DeskPayment = 'cash' | 'card' | 'pay_later';
+// The choices in the drawer: cash / card / pay later for Flexi members,
+// "Check in anyway" (not_paid) for anyone else. Matches the website's
+// record-payment endpoint and the "payment" saved on each check-in.
+export type DeskPayment = 'cash' | 'card' | 'pay_later' | 'not_paid';
 
 // Who the drawer is for - from the check-in-member "no_sessions" response
 export type UnpaidMember = {
@@ -55,7 +56,8 @@ function reason(member: UnpaidMember) {
 // Slides up on the Scan tab when someone who isn't paid up is scanned, so the
 // GA can take payment at the desk for a pack of 10 sessions (cash, or card on
 // iZettle) or let them in to pay later. Every option checks them in.
-// Flexi members only - anyone else just sees why, and how to sort it out.
+// Payment is for Flexi members only - anyone else (e.g. a Direct Debit
+// that isn't active) sees why, and the GA can still let them in.
 export function PaymentDrawer({ member, isSaving, onChoose, onCancel }: Props) {
   // "£90" / "£95" - or nothing if an older website didn't send the prices
   const cashPrice = member?.cash_price ? `£${member.cash_price}` : '';
@@ -89,6 +91,22 @@ export function PaymentDrawer({ member, isSaving, onChoose, onCancel }: Props) {
                 set up a new Direct Debit - from the notice on the app&apos;s
                 home screen or their Account page on the website.
               </Text>
+            ) : null}
+
+            {/* --- Not a Flexi member: let them in anyway, unpaid --- */}
+            {!canPay ? (
+              <Pressable
+                disabled={isSaving}
+                onPress={() => onChoose('not_paid')}
+                className="mt-6 items-center rounded-lg border-2 border-amber-400 py-4 active:opacity-80"
+              >
+                <Text className="text-lg font-bold text-amber-400">
+                  Check in anyway
+                </Text>
+                <Text className="text-xs text-gray-300">
+                  Shows as &quot;Not paid&quot; on Who&apos;s here
+                </Text>
+              </Pressable>
             ) : null}
 
             {/* --- Take payment for a pack --- */}
@@ -156,7 +174,7 @@ export function PaymentDrawer({ member, isSaving, onChoose, onCancel }: Props) {
             ) : (
               <Pressable onPress={onCancel} hitSlop={8} className="mt-6">
                 <Text className="text-center text-base text-gray-400 underline">
-                  {canPay ? "Cancel - don't check in" : 'Close'}
+                  Cancel - don&apos;t check in
                 </Text>
               </Pressable>
             )}

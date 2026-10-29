@@ -39,7 +39,7 @@ type AttendanceEntry = {
   membership_type?: string;
   scanned_at: string;
   // Set if they weren't paid up when scanned
-  payment?: 'cash' | 'card' | 'pay_later';
+  payment?: 'cash' | 'card' | 'pay_later' | 'not_paid';
   // Pounds taken at the desk with a cash/card payment
   amount?: number;
   // A GA - shown with a gold star, and "GA" instead of their membership type
@@ -50,12 +50,14 @@ type AttendanceEntry = {
 };
 
 // Badge next to someone's name if they weren't paid up when scanned, showing
-// how they got in (green = paid at the desk, amber = owes). Handy for
+// how they got in (green = paid at the desk, amber = owes, red = let in
+// without paying, e.g. Direct Debit not active). Handy for
 // checking the cash box and iZettle takings at the end of the night.
 const PAYMENT_BADGES = {
   cash: { label: 'Cash', className: 'bg-green-700' },
   card: { label: 'Card', className: 'bg-green-700' },
   pay_later: { label: 'Pay later', className: 'bg-amber-500' },
+  not_paid: { label: 'Not paid', className: 'bg-red-700' },
 };
 
 type AttendanceResponse = {

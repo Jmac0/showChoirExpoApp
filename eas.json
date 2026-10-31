@@ -16,7 +16,13 @@
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_BASE_URL": "https://www.show-choir.co.uk"
+        "EXPO_PUBLIC_BASE_URL": "https://app.show-choir.co.uk"
+      }
+    },
+    "store-dev": {
+      "extends": "production",
+      "env": {
+        "EXPO_PUBLIC_BASE_URL": "https://showchoirnextjs-git-dev-jmac0s-projects.vercel.app"
       }
     }
   },

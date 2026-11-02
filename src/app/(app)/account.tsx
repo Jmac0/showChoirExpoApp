@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import {
   KeyboardAvoidingView,
+  Linking,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -12,6 +13,7 @@ import { ChangePassword } from '@/components/ChangePassword';
 import { DeleteAccount } from '@/components/DeleteAccount';
 import { MembershipDetails } from '@/components/MembershipDetails';
 import { useAuth } from '@/contexts/authContext';
+import { BASE_URL } from '@/lib/api';
 import { confirm } from '@/lib/confirm';
 
 // Matches `lightGold` in tailwind.config.js (RefreshControl isn't styled via className)
@@ -86,6 +88,18 @@ const AccountScreen = () => {
 
         {/* Permanently delete their account (only once it's loaded) */}
         {profile?.email ? <DeleteAccount /> : null}
+
+        {/* Apple requires the privacy policy to be reachable in the app. It's
+        on the website the app talks to, so it opens in the browser. */}
+        <Pressable
+          onPress={() => Linking.openURL(`${BASE_URL}/privacy-policy`)}
+          hitSlop={8}
+          className="mt-10"
+        >
+          <Text className="text-sm text-gray-400 underline">
+            Privacy policy
+          </Text>
+        </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>
   );

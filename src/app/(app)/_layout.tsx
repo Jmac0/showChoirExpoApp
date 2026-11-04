@@ -23,7 +23,7 @@ const TabsLayout = () => {
     return <Redirect href="/login" />;
   }
 
-  // Music & Lyrics (and Notifications, when it's built) are for active members only - hidden
+  // Announcements and Music & Lyrics are for active members only - hidden
   // when the website says their membership isn't active (Direct Debit
   // stopped over 14 days ago, or Flexi sessions expired). An older website
   // doesn't say, so show them.
@@ -91,23 +91,17 @@ const TabsLayout = () => {
             href: null,
           }}
         />
-        {/* Notifications isn't built yet (the screen is a placeholder), so
-            it's hidden for now. It has to stay listed here with href: null -
-            expo-router adds a tab for every file in this folder, so just
-            deleting this entry would bring back a plain, unstyled tab. To
-            turn it back on, swap in the commented-out options. */}
         <Tabs.Screen
-          name="notifications"
+          name="announcements"
           options={{
-            href: null,
-            // title: 'Notifications',
-            // href: isActiveMember ? undefined : null,
-            // tabBarIcon: ({ color, focused }) => (
-            //   <TabBarIcon
-            //     name={focused ? 'bulb' : 'bulb-outline'}
-            //     color={color}
-            //   />
-            // ),
+            title: 'Announcements',
+            href: isActiveMember ? undefined : null,
+            tabBarIcon: ({ color, focused }) => (
+              <TabBarIcon
+                name={focused ? 'megaphone' : 'megaphone-outline'}
+                color={color}
+              />
+            ),
           }}
         />
         <Tabs.Screen

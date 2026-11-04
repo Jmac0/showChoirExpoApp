@@ -5,6 +5,7 @@ import {
   Pressable,
   Text,
   TextInput,
+  TextInputInstance,
   View,
 } from 'react-native';
 
@@ -30,7 +31,7 @@ const LoginForm = ({
   isSubmitting,
 }: LoginFormProps) => {
   const router = useRouter();
-  const passwordInput = useRef<TextInput>(null);
+  const passwordInput = useRef<TextInputInstance>(null);
   // Which field has focus, to highlight its border in gold
   const [focused, setFocused] = useState<'email' | 'password' | null>(null);
 

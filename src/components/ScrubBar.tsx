@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { GestureResponderEvent, Text, View } from 'react-native';
+import { GestureResponderEvent, HostInstance, Text, View } from 'react-native';
 
 type Props = {
   // Where the track is now, and how long it is (seconds)
@@ -22,7 +22,7 @@ const time = (seconds: number) => {
 // when they let go (so it doesn't stutter through every point on the way).
 export function ScrubBar({ currentTime, duration, onSeek }: Props) {
   // The bar, and its left edge on screen + width (measured when touched)
-  const bar = useRef<View>(null);
+  const bar = useRef<HostInstance>(null);
   const barBox = useRef({ x: 0, width: 1 });
   // Where the finger is (0-1) while dragging, or null when not dragging
   const [dragFraction, setDragFraction] = useState<number | null>(null);

@@ -22,7 +22,7 @@ Expo (React Native) app for Show Choir members and welcome assistants (GAs). It 
 
 ## Gotchas
 
-- **Only packages included in Expo Go** unless we move to a dev build. Don't add config plugins that only matter for native builds (e.g. expo-sharing's share-into plugin was deliberately left out of `app.json`). Exception, on purpose: the `@stripe/stripe-react-native` plugin (Apple Pay merchant id `merchant.co.uk.show-choir`, Google Pay) – Apple/Google Pay need it in real builds, and Expo Go ignores it.
+- **Only packages included in Expo Go** unless we move to a dev build. Don't add config plugins that only matter for native builds (e.g. expo-sharing's share-into plugin was deliberately left out of `app.json`). Exception, on purpose: the `@stripe/stripe-react-native` plugin (Apple Pay merchant id `merchant.co.uk.show-choir`, Google Pay) – Apple/Google Pay need it in real builds, and Expo Go ignores it. Its `disableSPM: true` keeps Stripe's iOS SDK on CocoaPods (Stripe 0.78+ otherwise uses Swift Package Manager, which needs dynamic frameworks for the whole app); Stripe plans to drop CocoaPods eventually.
 - **Keyboard on Android**: Expo apps are edge-to-edge, so Android no longer shrinks the screen when the keyboard opens – any screen with a text box needs `KeyboardAvoidingView behavior="padding"` on **both** platforms (not `undefined` on Android), around its ScrollView, or the keyboard covers the box (see `login.tsx`, `account.tsx`).
 - React Compiler lint: no reading refs during render (that's why `ScrubBar` uses View responder props, not PanResponder).
 - Phones can't reach `localhost` – anything the website hands out with a localhost address (e.g. MinIO links) won't work on a device.

@@ -50,7 +50,8 @@
         "@stripe/stripe-react-native",
         {
           "merchantIdentifier": "merchant.co.uk.show-choir",
-          "enableGooglePay": true
+          "enableGooglePay": true,
+          "disableSPM": true
         }
       ]
     ],

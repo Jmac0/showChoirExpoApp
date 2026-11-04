@@ -228,7 +228,7 @@ export function MemberSearch({ visible, onClose, onCheckIn }: Props) {
                 <Text className="mt-6 px-8 text-center text-gray-400">
                   {emptyMessage}
                 </Text>
-              ) : null
+              ) : undefined
             }
           />
         </View>

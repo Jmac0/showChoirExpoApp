@@ -359,7 +359,7 @@ const TastersScreen = () => {
                   ? 'No one matches that search'
                   : `No taster bookings for ${current.choir} in the last ${current.weeks} weeks`}
               </Text>
-            ) : null
+            ) : undefined
           }
           ListFooterComponent={
             hereToday.length || cameEarlier.length ? (
@@ -367,7 +367,7 @@ const TastersScreen = () => {
                 ✉ sends the &ldquo;great to meet you&rdquo; email. Long-press
                 someone who&apos;s here today to undo their check-in.
               </Text>
-            ) : null
+            ) : undefined
           }
         />
       ) : (

@@ -1,10 +1,16 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Ref, useState } from 'react';
-import { Pressable, TextInput, TextInputProps, View } from 'react-native';
+import {
+  Pressable,
+  TextInput,
+  TextInputInstance,
+  TextInputProps,
+  View,
+} from 'react-native';
 
 type Props = Omit<TextInputProps, 'secureTextEntry'> & {
   // Passed on to the box, e.g. to focus it from the email box's "Next"
-  ref?: Ref<TextInput>;
+  ref?: Ref<TextInputInstance>;
   // Margins go here, not in className - the eye is centred on this wrapper,
   // so a margin on the box itself would push it off centre
   containerClassName?: string;

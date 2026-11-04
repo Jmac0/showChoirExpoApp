@@ -283,14 +283,14 @@ const WhosHereScreen = () => {
               <Text className="mt-6 text-center text-gray-400">
                 {query ? 'No one matches that name' : 'No one scanned in yet'}
               </Text>
-            ) : null
+            ) : undefined
           }
           ListFooterComponent={
             visible.length ? (
               <Text className="mb-8 mt-4 text-center text-xs text-gray-500">
                 Long-press a name to undo a check-in
               </Text>
-            ) : null
+            ) : undefined
           }
         />
       ) : (

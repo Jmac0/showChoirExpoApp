@@ -117,7 +117,10 @@ export function BuyFlexiSessions() {
         disabled={isPaying}
         className={`mt-4 w-full items-center rounded-md bg-lightGold py-3 active:opacity-80 ${isPaying ? 'opacity-70' : ''}`}
       >
-        <Text className="text-base font-bold text-black">
+        {/* Full width + centred rather than sized to its words: some Android
+            phones (e.g. Motorola) mis-measure bold text when the label
+            changes, and cut "Just a moment..." off at "Just a" */}
+        <Text className="w-full text-center text-base font-bold text-black">
           {isPaying
             ? 'Just a moment...'
             : `Buy 10 more sessions${price ? ` - £${price}` : ''}`}

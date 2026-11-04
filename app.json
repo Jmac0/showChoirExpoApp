@@ -54,7 +54,7 @@
           "disableSPM": true
         }
       ],
-      "./plugins/withNoReleaseLint"
+      "./plugins/withStripeAndroidFixes"
     ],
     "ios": {
       "bundleIdentifier": "co.uk.show-choir.showchoir",

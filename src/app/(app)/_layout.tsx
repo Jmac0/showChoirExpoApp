@@ -10,6 +10,14 @@ import { RehearsalProvider } from '@/contexts/rehearsalContext';
 // React Navigation's screenOptions/tabBarIcon aren't styled via className.
 const LIGHT_GOLD = 'rgb(222,204,120)';
 
+// Keeps a screen out of the tab bar but still openable (the staff menu
+// screens). Not `href: null` - since SDK 58 that sends anyone who opens the
+// screen straight back to Home.
+const NOT_IN_TAB_BAR = {
+  tabBarButton: () => null,
+  tabBarItemStyle: { display: 'none' as const },
+};
+
 const TabsLayout = () => {
   const { session, profile, isLoading } = useAuth();
 
@@ -60,7 +68,7 @@ const TabsLayout = () => {
             title: 'Scan Members',
             // Never in the tab bar - GAs open it from the staff menu
             // (components/StaffMenu.tsx)
-            href: null,
+            ...NOT_IN_TAB_BAR,
             tabBarIcon: ({ color, focused }) => (
               <TabBarIcon
                 name={focused ? 'scan' : 'scan-outline'}
@@ -74,7 +82,7 @@ const TabsLayout = () => {
           options={{
             title: "Who's here",
             // In the staff menu, not the tab bar
-            href: null,
+            ...NOT_IN_TAB_BAR,
             tabBarIcon: ({ color, focused }) => (
               <TabBarIcon
                 name={focused ? 'people' : 'people-outline'}
@@ -88,7 +96,7 @@ const TabsLayout = () => {
           options={{
             title: 'Taster bookings',
             // In the staff menu, not the tab bar
-            href: null,
+            ...NOT_IN_TAB_BAR,
           }}
         />
         <Tabs.Screen

@@ -53,7 +53,8 @@
           "enableGooglePay": true,
           "disableSPM": true
         }
-      ]
+      ],
+      "./plugins/withNoReleaseLint"
     ],
     "ios": {
       "bundleIdentifier": "co.uk.show-choir.showchoir",

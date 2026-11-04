@@ -44,6 +44,7 @@ import { ScanResultToast, type ScanToast } from '@/components/ScanResultToast';
 import { VenueBar } from '@/components/VenueBar';
 import { useAuth } from '@/contexts/authContext';
 import { useRehearsal } from '@/contexts/rehearsalContext';
+import { canUseGAScreens } from '@/lib/roles';
 
 // How long a result stays on screen before the scanner accepts the next code.
 const RESULT_DISPLAY_MS = 5000;
@@ -526,7 +527,8 @@ const ScanScreen = () => {
 
   // Not a GA. The tab is hidden for them anyway (see (app)/_layout.tsx);
   // this guards against reaching the route some other way.
-  if (profile?.role !== 'ga') {
+  // GAs, and admins standing in for one
+  if (!canUseGAScreens(profile?.role)) {
     return (
       <View className="flex-1 items-center bg-lightBlack pt-10">
         <Text className="text-white">Only GAs can scan membership cards.</Text>

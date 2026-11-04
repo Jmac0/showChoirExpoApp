@@ -12,7 +12,9 @@ const LIGHT_GOLD = 'rgb(222,204,120)';
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
 // What's in the menu, and who it's for (the member's role on the website).
-// Add admin-only screens here with roles: ['admin']. The screens themselves
+// Admins see the GA screens too, so they can stand in on the welcome desk
+// (the website's requireGA lets them in). Add admin-only screens here with
+// roles: ['admin']. The screens themselves
 // live in src/app/(app)/ and are hidden from the tab bar (href: null).
 const ITEMS: {
   label: string;
@@ -26,21 +28,21 @@ const ITEMS: {
     href: '/scan',
     path: '/scan',
     icon: 'scan-outline',
-    roles: ['ga'],
+    roles: ['ga', 'admin'],
   },
   {
     label: "Who's here",
     href: '/here',
     path: '/here',
     icon: 'people-outline',
-    roles: ['ga'],
+    roles: ['ga', 'admin'],
   },
   {
     label: 'Taster bookings',
     href: '/tasters',
     path: '/tasters',
     icon: 'ticket-outline',
-    roles: ['ga'],
+    roles: ['ga', 'admin'],
   },
 ];
 

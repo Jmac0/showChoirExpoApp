@@ -22,6 +22,7 @@ import { VenueBar } from '@/components/VenueBar';
 import { useAuth } from '@/contexts/authContext';
 import { useRehearsal } from '@/contexts/rehearsalContext';
 import { confirm, showMessage } from '@/lib/confirm';
+import { canUseGAScreens } from '@/lib/roles';
 
 // How often the list refreshes itself while the tab is open, so it picks up
 // scans made on other GAs' phones.
@@ -170,7 +171,8 @@ const WhosHereScreen = () => {
 
   // Not a GA. The tab is hidden for them anyway (see (app)/_layout.tsx);
   // this guards against reaching the route some other way.
-  if (profile?.role !== 'ga') {
+  // GAs, and admins standing in for one
+  if (!canUseGAScreens(profile?.role)) {
     return (
       <View className="flex-1 items-center bg-lightBlack pt-10">
         <Text className="text-white">Only GAs can see who&apos;s here.</Text>

@@ -27,6 +27,7 @@ import { VenueBar } from '@/components/VenueBar';
 import { useAuth } from '@/contexts/authContext';
 import { useRehearsal } from '@/contexts/rehearsalContext';
 import { confirm, showMessage } from '@/lib/confirm';
+import { canUseGAScreens } from '@/lib/roles';
 
 const POLL_INTERVAL_MS = 20000;
 
@@ -186,7 +187,8 @@ const TastersScreen = () => {
   // --- What to render ---
 
   // The screen is only in GAs' staff menu; this guards other ways in
-  if (profile?.role !== 'ga') {
+  // GAs, and admins standing in for one
+  if (!canUseGAScreens(profile?.role)) {
     return (
       <View className="flex-1 items-center bg-lightBlack pt-10">
         <Text className="text-white">Only GAs can see taster bookings.</Text>

@@ -8,6 +8,7 @@ import {
 } from 'react';
 
 import { useAuth } from '@/contexts/authContext';
+import { canUseGAScreens } from '@/lib/roles';
 
 // Mirrors AppVenue / VenuesResponse in the website's
 // api/member-resources/venues.ts
@@ -57,7 +58,8 @@ export const useRehearsal = () => useContext(RehearsalContext);
 // rehearsal. Only loads anything for GAs.
 export function RehearsalProvider({ children }: PropsWithChildren) {
   const { profile, authRequest } = useAuth();
-  const isGA = profile?.role === 'ga';
+  // GAs, and admins standing in for one
+  const isGA = canUseGAScreens(profile?.role);
 
   const [venues, setVenues] = useState<Venue[]>([]);
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);

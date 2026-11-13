@@ -1,5 +1,5 @@
 import React from 'react';
-import { View } from 'react-native';
+import { ActivityIndicator, Text, View } from 'react-native';
 import { Redirect, Tabs } from 'expo-router';
 import { StaffMenu } from '@/components/StaffMenu';
 import { TabBarIcon } from '@/components/TabBarIcon';
@@ -23,8 +23,15 @@ const TabsLayout = () => {
 
   // Wait for a persisted session to be restored before deciding to redirect,
   // otherwise a logged-in user briefly flashes the login screen on cold start.
+  // (Only the first start after updating, or with nothing saved, waits on
+  // the website - otherwise the saved card shows straight away.)
   if (isLoading) {
-    return <View className="flex-1 bg-lightBlack" />;
+    return (
+      <View className="flex-1 items-center justify-center bg-lightBlack">
+        <ActivityIndicator color={LIGHT_GOLD} size="large" />
+        <Text className="mt-4 text-gray-300">Loading your card...</Text>
+      </View>
+    );
   }
 
   if (!session) {
@@ -43,19 +50,38 @@ const TabsLayout = () => {
     <RehearsalProvider>
       <Tabs
         screenOptions={{
+          // Dark tab bar, so the gold of the tab you're on stands out (gold
+          // on white was too faint to see), and light grey for the others
           tabBarActiveTintColor: LIGHT_GOLD,
+          tabBarInactiveTintColor: 'rgb(209,213,219)',
+          tabBarStyle: {
+            backgroundColor: 'rgb(32,33,36)',
+            borderTopColor: 'rgba(222,204,120,0.4)',
+          },
           headerStyle: { backgroundColor: LIGHT_GOLD },
           // Screen name in the middle, in Courgette (loaded in app/_layout)
           headerTitleAlign: 'center',
-          headerTitleStyle: {
-            fontFamily: 'Courgette_400Regular',
-            fontSize: 24,
-            // Courgette sits low: a taller line so the tails of g, p, y
-            // aren't cut, and nudged up for a little space underneath. (Not
-            // a margin - Android shrinks the title to fit it and cuts it off.)
-            lineHeight: 34,
-            transform: [{ translateY: -6 }],
-          },
+          // Grows with the phone's text size, but only so far - the bar
+          // itself doesn't grow, so very large text would be cut off - and
+          // on one line, between the menu and cart buttons
+          headerTitle: ({ children }) => (
+            <Text
+              numberOfLines={1}
+              maxFontSizeMultiplier={1.3}
+              style={{
+                fontFamily: 'Courgette_400Regular',
+                fontSize: 24,
+                // Courgette sits low: a taller line so the tails of g, p, y
+                // aren't cut, and nudged up for a little space underneath.
+                // (Not a margin - Android shrinks the title to fit it and
+                // cuts it off.)
+                lineHeight: 34,
+                transform: [{ translateY: -6 }],
+              }}
+            >
+              {children}
+            </Text>
+          ),
           // GA / admin screens are in a menu (top left) instead of the tab
           // bar, so it isn't crowded - only shown to those who have any.
           // Left, so it's well away from the Shop's cart button (top right).

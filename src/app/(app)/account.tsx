@@ -25,7 +25,7 @@ const LIGHT_GOLD = 'rgb(222,204,120)';
 // acting on (Direct Debit stopped, Flexi sessions expiring) stay on the
 // Home tab, next to the membership card, so they're seen.
 const AccountScreen = () => {
-  const { profile, refreshProfile, signOut } = useAuth();
+  const { profile, refreshProfile, signOut, isOffline } = useAuth();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Pull down to re-fetch the profile, e.g. after setting up a Direct Debit
@@ -40,7 +40,10 @@ const AccountScreen = () => {
   const confirmSignOut = () => {
     confirm({
       title: 'Log out?',
-      message: 'You will need your email and password to log back in.',
+      // No signal: once logged out, the card can't come back until there is
+      message: isOffline
+        ? "No signal at the moment. If you log out, you can't log back in or show your card until you have signal. Log out anyway?"
+        : 'You will need your email and password to log back in.',
       confirmText: 'Log out',
       onConfirm: signOut,
     });

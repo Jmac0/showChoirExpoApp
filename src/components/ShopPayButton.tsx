@@ -7,7 +7,7 @@ import {
 import axios from 'axios';
 import Constants from 'expo-constants';
 import * as Linking from 'expo-linking';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Pressable, Text } from 'react-native';
 
 import { useAuth } from '@/contexts/authContext';
@@ -45,8 +45,13 @@ type Props = {
 export function ShopPayButton({ lines, venue, note, disabled, onPaid }: Props) {
   const { profile, authRequest } = useAuth();
   const [isPaying, setIsPaying] = useState(false);
+  // Set straight away (state takes a moment), so two quick taps can't start
+  // two payments
+  const busy = useRef(false);
 
   const pay = async () => {
+    if (busy.current) return;
+    busy.current = true;
     setIsPaying(true);
     try {
       let sheet: PaymentSheetResponse;
@@ -119,6 +124,7 @@ export function ShopPayButton({ lines, venue, note, disabled, onPaid }: Props) {
     } catch {
       showMessage("Couldn't start the payment", 'Please try again.');
     } finally {
+      busy.current = false;
       setIsPaying(false);
     }
   };

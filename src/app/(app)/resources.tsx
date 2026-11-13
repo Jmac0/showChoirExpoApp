@@ -248,6 +248,8 @@ const MusicScreen = () => {
         {/* Gold header - tap to open */}
         <Pressable
           onPress={() => setOpen({ ...open, [song.id]: !isOpen })}
+          accessibilityRole="button"
+          accessibilityState={{ expanded: isOpen }}
           className="flex-row items-center justify-between bg-lightGold px-4 py-3"
         >
           <Text className="text-xl font-bold text-black">{song.title}</Text>
@@ -270,33 +272,46 @@ const MusicScreen = () => {
               const isAudio = track.kind === 'audio';
               return (
                 <View key={track.id} className="border-b border-white/10 py-3">
-                  <Pressable
-                    onPress={() =>
-                      isAudio ? togglePlay(song, track) : openPdf(track)
-                    }
-                    className="flex-row items-center"
-                  >
-                    <Ionicons
-                      name={
-                        isAudio
-                          ? isThis && status.playing
-                            ? 'pause-circle'
-                            : 'play-circle'
-                          : 'document-text'
+                  {/* The track (play / open) and, for PDFs, a separate share
+                      button beside it - side by side rather than one inside
+                      the other, so screen readers can reach both */}
+                  <View className="flex-row items-center">
+                    <Pressable
+                      onPress={() =>
+                        isAudio ? togglePlay(song, track) : openPdf(track)
                       }
-                      size={36}
-                      color={LIGHT_GOLD}
-                    />
-                    <View className="ml-3 flex-1">
-                      <Text className="text-lg text-white">{track.label}</Text>
-                      <Text className="text-xs text-gray-400">
-                        {isAudio
-                          ? PART_LABELS[track.part || 'other']
-                          : track.kind === 'lyrics'
-                            ? 'Lyrics · tap to open, or share / save'
-                            : 'Sheet music · tap to open, or share / save'}
-                      </Text>
-                    </View>
+                      accessibilityRole="button"
+                      accessibilityLabel={
+                        isAudio
+                          ? `${isThis && status.playing ? 'Pause' : 'Play'} ${track.label}, ${PART_LABELS[track.part || 'other']}`
+                          : `Open ${track.label}`
+                      }
+                      className="flex-1 flex-row items-center"
+                    >
+                      <Ionicons
+                        name={
+                          isAudio
+                            ? isThis && status.playing
+                              ? 'pause-circle'
+                              : 'play-circle'
+                            : 'document-text'
+                        }
+                        size={36}
+                        color={LIGHT_GOLD}
+                      />
+                      <View className="ml-3 flex-1">
+                        <Text className="text-lg text-white">
+                          {track.label}
+                        </Text>
+                        <Text className="text-xs text-gray-400">
+                          {isAudio
+                            ? PART_LABELS[track.part || 'other']
+                            : track.kind === 'lyrics'
+                              ? 'Lyrics · tap to open, or share / save'
+                              : 'Sheet music · tap to open, or share / save'}
+                        </Text>
+                      </View>
+                    </Pressable>
                     {/* PDFs: share / save button on the right */}
                     {!isAudio ? (
                       <Pressable
@@ -317,7 +332,7 @@ const MusicScreen = () => {
                         )}
                       </Pressable>
                     ) : null}
-                  </Pressable>
+                  </View>
                   {/* Progress for the track that's playing - drag or tap it
                       to jump back to the bit you're rehearsing */}
                   {isThis ? (
@@ -364,6 +379,8 @@ const MusicScreen = () => {
             <Pressable
               key={p.value}
               onPress={() => choosePart(p.value)}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: part === p.value }}
               className={`mr-2 rounded-full px-4 py-2 ${
                 part === p.value ? 'bg-lightGold' : 'border border-lightGold/60'
               }`}
@@ -381,6 +398,9 @@ const MusicScreen = () => {
       </ScrollView>
 
       {/* --- Songs --- */}
+      {!songs && !error ? (
+        <ActivityIndicator className="mt-10" color={LIGHT_GOLD} size="large" />
+      ) : null}
       {error && !songs ? (
         <Text className="mx-4 text-center text-gray-300">
           Couldn&apos;t load the music - pull down to try again
@@ -398,6 +418,8 @@ const MusicScreen = () => {
         <>
           <Pressable
             onPress={() => setShowArchived(!showArchived)}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: showArchived }}
             className="mx-4 mb-4 mt-4 items-center rounded-full border border-lightGold/60 py-2"
           >
             <Text className="text-lightGold">

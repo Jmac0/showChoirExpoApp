@@ -36,6 +36,14 @@ const SIGN_IN_HINT_DISMISSED_KEY = 'qrSignInHintDismissed';
 // Matches `lightGold` in tailwind.config.js (RefreshControl isn't styled via className).
 const LIGHT_GOLD = 'rgb(222,204,120)';
 
+// When the saved details are from: "14:05" today, otherwise "17 October"
+const savedWhen = (iso: string) => {
+  const saved = new Date(iso);
+  return saved.toDateString() === new Date().toDateString()
+    ? saved.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+    : saved.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' });
+};
+
 // "17 October"
 const dayMonth = (iso: string) =>
   new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' });
@@ -48,7 +56,8 @@ const getGreeting = () => {
 };
 
 const IndexComponent = () => {
-  const { profile, refreshProfile, authRequest } = useAuth();
+  const { profile, refreshProfile, authRequest, isOffline, profileSavedAt } =
+    useAuth();
   const [isOpeningDirectDebit, setIsOpeningDirectDebit] = useState(false);
 
   // "Set up a new Direct Debit": the website asks GoCardless for its form
@@ -73,8 +82,14 @@ const IndexComponent = () => {
   // Pull down to re-fetch the profile, e.g. to see the updated flexi count.
   const onRefresh = async () => {
     setIsRefreshing(true);
-    await refreshProfile();
+    const result = await refreshProfile();
     setIsRefreshing(false);
+    if (result === 'offline') {
+      showMessage(
+        "Couldn't update",
+        "Can't reach Show Choir at the moment. Your card still works - try again when you have signal."
+      );
+    }
   };
 
   // Include name alongside email so the admin's scanner can show it
@@ -115,6 +130,22 @@ const IndexComponent = () => {
         />
       }
     >
+      {/* No signal (or very poor): saying what's saved, so an old Flexi
+          count isn't taken as up to date */}
+      {isOffline && profile?.email ? (
+        <View
+          accessibilityRole="alert"
+          accessibilityLiveRegion="polite"
+          className="mb-2 w-11/12 flex-row items-center rounded-lg border border-lightGold/60 bg-black/40 px-4 py-3"
+        >
+          <Ionicons name="cloud-offline-outline" size={22} color={LIGHT_GOLD} />
+          <Text className="ml-3 flex-1 text-gray-200">
+            Can&apos;t reach Show Choir - showing your details from{' '}
+            {profileSavedAt ? savedWhen(profileSavedAt) : 'earlier'}. Your card
+            still works.
+          </Text>
+        </View>
+      ) : null}
       {profile?.email ? (
         <>
           <Text className="mt-4 text-2xl font-bold text-lightGold">
@@ -253,18 +284,21 @@ const IndexComponent = () => {
               </Text>
               <Pressable
                 onPress={dismissSignInHint}
-                hitSlop={8}
+                hitSlop={12}
+                accessibilityRole="button"
+                accessibilityLabel="Dismiss tip"
                 className="ml-3"
               >
-                <Text className="text-lg font-bold text-gray-500">✕</Text>
+                <Text className="text-lg font-bold text-gray-700">✕</Text>
               </Pressable>
             </View>
           ) : null}
         </>
       ) : (
-        <Text className="mt-8 text-white">
-          Unable to load your membership card. Pull down to try again, or log
-          out and back in from the Account tab.
+        <Text className="mt-8 w-11/12 text-center text-white">
+          {isOffline
+            ? "Your membership card will show as soon as you have signal - it's then saved on your phone for next time. Pull down to try again."
+            : 'Unable to load your membership card. Pull down to try again. If this keeps happening, log out and back in from the Account tab.'}
         </Text>
       )}
     </ScrollView>

@@ -363,7 +363,7 @@ const TastersScreen = () => {
           }
           ListFooterComponent={
             hereToday.length || cameEarlier.length ? (
-              <Text className="mb-8 mt-4 px-6 text-center text-xs text-gray-500">
+              <Text className="mb-8 mt-4 px-6 text-center text-xs text-gray-400">
                 ✉ sends the &ldquo;great to meet you&rdquo; email. Long-press
                 someone who&apos;s here today to undo their check-in.
               </Text>

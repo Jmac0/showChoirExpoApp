@@ -1,6 +1,12 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useFocusEffect, useNavigation } from 'expo-router';
-import { useCallback, useLayoutEffect, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -87,18 +93,34 @@ const ShopScreen = () => {
   // up to the last 50)
   const [ordersShown, setOrdersShown] = useState(ORDERS_PAGE);
 
+  // Numbers each load, so if several overlap (opening the tab, pulling to
+  // refresh, the check after paying) only the newest answer is used - an
+  // older one arriving last could hide a new order
+  const latestLoad = useRef(0);
+  // The second look after paying - cancelled if the screen goes away
+  const recheck = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (recheck.current) clearTimeout(recheck.current);
+    },
+    []
+  );
+
   // Fetched each time the tab is opened, as photo links only last an hour
   const load = useCallback(async () => {
+    latestLoad.current += 1;
+    const thisLoad = latestLoad.current;
     try {
       const data = await authRequest<ShopData>({
         url: '/api/member-resources/shop',
       });
+      if (thisLoad !== latestLoad.current) return;
       setShop(data);
       // Drop anything taken off the shop since it was added
       keepOnly(data.products);
       setError(false);
     } catch {
-      setError(true);
+      if (thisLoad === latestLoad.current) setError(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -141,7 +163,8 @@ const ShopScreen = () => {
     load();
     // Stripe tells the website separately - look again shortly in case the
     // order wasn't marked paid yet
-    setTimeout(load, 3000);
+    if (recheck.current) clearTimeout(recheck.current);
+    recheck.current = setTimeout(load, 3000);
   };
 
   return (

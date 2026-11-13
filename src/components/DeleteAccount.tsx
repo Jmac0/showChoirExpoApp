@@ -57,12 +57,12 @@ export function DeleteAccount() {
     });
   };
 
-  // Well below everything else (mt-64), small and muted until opened, so it
-  // reads as a separate, rarely needed action - not one of the normal
-  // account options above it
+  // Below everything else (mt-16), muted until opened, so it reads as a
+  // separate, rarely needed action - not one of the normal account options
+  // above it - but easy to find and tap (app stores want deleting to be easy)
   return (
     <View
-      className={`mt-64 w-11/12 items-center rounded-xl border border-red-700 bg-red-200 ${isOpen ? 'p-5' : 'p-3'}`}
+      className={`mt-16 w-11/12 items-center rounded-xl border border-red-700 bg-red-200 ${isOpen ? 'p-5' : 'p-3'}`}
     >
       <Text className="mb-2 text-xs font-bold uppercase tracking-widest text-red-800">
         Danger zone
@@ -71,10 +71,11 @@ export function DeleteAccount() {
       {!isOpen ? (
         <Pressable
           onPress={() => setIsOpen(true)}
-          className="flex-row items-center"
+          accessibilityRole="button"
+          className="flex-row items-center px-4 py-3"
         >
-          <Ionicons name="trash-outline" size={16} color="#991b1b" />
-          <Text className="ml-1.5 text-sm font-bold text-red-800">
+          <Ionicons name="trash-outline" size={20} color="#991b1b" />
+          <Text className="ml-2 text-base font-bold text-red-800">
             Delete my account
           </Text>
         </Pressable>

@@ -7,7 +7,7 @@ import {
 } from '@stripe/stripe-react-native';
 import Constants from 'expo-constants';
 import * as Linking from 'expo-linking';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Platform, Pressable, Text, View } from 'react-native';
 
 import { useAuth } from '@/contexts/authContext';
@@ -37,10 +37,15 @@ type PaymentSheetResponse = {
 export function BuyFlexiSessions() {
   const { profile, authRequest, refreshProfile } = useAuth();
   const [isPaying, setIsPaying] = useState(false);
+  // Set straight away (state takes a moment), so two quick taps can't start
+  // two payments
+  const busy = useRef(false);
 
   const price = profile?.flexi_pack_price;
 
   const buy = async () => {
+    if (busy.current) return;
+    busy.current = true;
     setIsPaying(true);
     try {
       const { clientSecret, publishableKey } =
@@ -96,6 +101,7 @@ export function BuyFlexiSessions() {
     } catch {
       showMessage("Couldn't start the payment", 'Please try again.');
     } finally {
+      busy.current = false;
       setIsPaying(false);
     }
   };

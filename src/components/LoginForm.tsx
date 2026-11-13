@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Linking,
   Pressable,
   Text,
   TextInput,
@@ -10,6 +11,7 @@ import {
 } from 'react-native';
 
 import { PasswordInput } from '@/components/PasswordInput';
+import { BASE_URL } from '@/lib/api';
 
 type LoginFormProps = {
   handleChange: (name: string, value: string) => void;
@@ -51,6 +53,7 @@ const LoginForm = ({
         autoComplete="email"
         textContentType="username"
         returnKeyType="next"
+        accessibilityLabel="Email"
         placeholder="you@example.com"
         placeholderTextColor="#6b7280"
         selectionColor={LIGHT_GOLD}
@@ -73,6 +76,7 @@ const LoginForm = ({
         autoComplete="current-password"
         textContentType="password"
         returnKeyType="go"
+        accessibilityLabel="Password"
         placeholder="Password"
         placeholderTextColor="#6b7280"
         selectionColor={LIGHT_GOLD}
@@ -122,6 +126,26 @@ const LoginForm = ({
           Forgot your password?
         </Text>
       </Pressable>
+
+      {/* Not a member yet: the website's Join page (membership options and
+          free taster) - so nobody, app reviewers included, hits a dead end */}
+      <View className="mt-8 items-center border-t border-white/10 pt-6">
+        <Text className="text-center text-base text-gray-300">
+          Not a member yet?
+        </Text>
+        <Pressable
+          onPress={() =>
+            Linking.openURL(`${BASE_URL}/show-choir-membership-options`)
+          }
+          accessibilityRole="link"
+          hitSlop={8}
+          className="mt-2"
+        >
+          <Text className="text-center text-base font-bold text-lightGold underline">
+            Join or book a free taster
+          </Text>
+        </Pressable>
+      </View>
     </View>
   );
 };

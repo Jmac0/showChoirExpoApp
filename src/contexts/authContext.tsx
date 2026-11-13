@@ -23,27 +23,17 @@ const REFRESH_TOKEN_KEY = 'refreshToken';
 // membership details - so plain AsyncStorage.
 const PROFILE_KEY = 'memberProfile';
 
-// The server said no (bad or expired login), as opposed to "couldn't reach
-// the server" - only then do we log the member out
-const isRejected = (error: unknown) =>
-  axios.isAxiosError(error) && [401, 403].includes(error.response?.status ?? 0);
+// Our website's own answer - it always replies with { message }. A hall
+// wifi's sign-in page (or a proxy) can also answer 401/403/404, and that
+// mustn't log anyone out.
+const fromOurWebsite = (error: unknown, statuses: number[]) =>
+  axios.isAxiosError(error) &&
+  statuses.includes(error.response?.status ?? 0) &&
+  typeof (error.response?.data as { message?: unknown })?.message === 'string';
 
-const saveProfile = (profile: MemberProfile | null) =>
-  (profile
-    ? AsyncStorage.setItem(PROFILE_KEY, JSON.stringify(profile))
-    : AsyncStorage.removeItem(PROFILE_KEY)
-  ).catch(() => {
-    // Not kept - only matters for the next offline start
-  });
-
-const loadSavedProfile = async (): Promise<MemberProfile | null> => {
-  try {
-    const saved = await AsyncStorage.getItem(PROFILE_KEY);
-    return saved ? (JSON.parse(saved) as MemberProfile) : null;
-  } catch {
-    return null;
-  }
-};
+// The website said no to the login (bad or expired), as opposed to "couldn't
+// reach the website" - only then do we log the member out
+const isRejected = (error: unknown) => fromOurWebsite(error, [401, 403]);
 
 // expo-secure-store has no keychain equivalent on web, so fall back to localStorage there.
 const tokenStorage = {
@@ -59,6 +49,72 @@ const tokenStorage = {
     Platform.OS === 'web'
       ? Promise.resolve(window.localStorage.removeItem(key))
       : SecureStore.deleteItemAsync(key),
+};
+
+// Which member a token belongs to (its "id"), read without checking it -
+// only used to make sure a saved profile is this login's, not the last one's
+const tokenOwner = (token: string): string | null => {
+  try {
+    const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    // JWTs leave off the "=" padding, which atob may want
+    const part = base64.padEnd(Math.ceil(base64.length / 4) * 4, '=');
+    return (JSON.parse(atob(part)) as { id?: string }).id ?? null;
+  } catch {
+    return null;
+  }
+};
+
+type SavedProfile = {
+  profile: MemberProfile;
+  // When the website sent it (ISO) - shown as "saved at ..." when offline
+  savedAt: string;
+  // The member it belongs to (from their login)
+  owner: string | null;
+};
+
+const saveProfile = (profile: MemberProfile | null, refreshToken?: string) =>
+  (profile
+    ? AsyncStorage.setItem(
+        PROFILE_KEY,
+        JSON.stringify({
+          profile,
+          savedAt: new Date().toISOString(),
+          owner: refreshToken ? tokenOwner(refreshToken) : null,
+        } satisfies SavedProfile)
+      )
+    : AsyncStorage.removeItem(PROFILE_KEY)
+  ).catch(() => {
+    // Not kept - only matters for the next offline start
+  });
+
+// The saved profile, if it's this login's
+const loadSavedProfile = async (
+  refreshToken: string
+): Promise<SavedProfile | null> => {
+  try {
+    const saved = JSON.parse(
+      (await AsyncStorage.getItem(PROFILE_KEY)) || 'null'
+    ) as SavedProfile | null;
+    if (!saved?.profile) return null;
+    const owner = tokenOwner(refreshToken);
+    return !saved.owner || !owner || saved.owner === owner ? saved : null;
+  } catch {
+    return null;
+  }
+};
+
+// The website says the member's account has gone (deleted)
+const isMemberGone = (error: unknown) =>
+  fromOurWebsite(error, [404]) &&
+  (error as { response: { data: { message: string } } }).response.data
+    .message === 'Member not found';
+
+// A real profile, not e.g. a wifi sign-in page that answered instead
+const checkProfile = (data: unknown): MemberProfile => {
+  if (typeof (data as MemberProfile)?.email !== 'string') {
+    throw new Error('Unexpected reply instead of the member profile');
+  }
+  return data as MemberProfile;
 };
 
 // Their Direct Debit has stopped - mirrors DirectDebitNotice in the
@@ -125,7 +181,13 @@ interface AuthContextType {
   // e.g. authRequest<Venues>({ url: '/api/member-resources/venues' })
   authRequest: <T>(config: AxiosRequestConfig) => Promise<T>;
   // Re-fetches the member's profile (e.g. flexi sessions left) from the DB.
-  refreshProfile: () => Promise<void>;
+  // 'ok', 'offline' (the website couldn't be reached - showing what we
+  // have), or 'signedOut' (their account or login has gone).
+  refreshProfile: () => Promise<'ok' | 'offline' | 'signedOut'>;
+  // The website couldn't be reached last time we tried - showing the
+  // details saved on the phone, from profileSavedAt (ISO)
+  isOffline: boolean;
+  profileSavedAt: string | null;
   session: SessionData | null;
   profile: MemberProfile | null;
   isLoading: boolean;
@@ -138,7 +200,9 @@ const AuthContext = createContext<AuthContextType>({
   authRequest: async () => {
     throw new Error('authRequest must be used inside <AuthProvider />');
   },
-  refreshProfile: async () => {},
+  refreshProfile: async () => 'offline',
+  isOffline: false,
+  profileSavedAt: null,
   session: null,
   profile: null,
   isLoading: true,
@@ -176,69 +240,35 @@ export function AuthProvider({ children }: PropsWithChildren) {
   // A token refresh already under way - shared, so several requests failing
   // at once (a poll, a screen opening, the app coming back) only refresh once
   const refreshing = useRef<Promise<string | null> | null>(null);
-  // Opened offline: still showing the saved profile, try the website again
+  // ...and which login it's for
+  const refreshingFor = useRef<string | null>(null);
+  // Showing the saved profile (opened offline / poor signal) - and when it
+  // was saved. Cleared once the website answers.
   const [profileStale, setProfileStale] = useState(false);
+  // ...and the website didn't answer when we tried
+  const [isOffline, setIsOffline] = useState(false);
+  const [profileSavedAt, setProfileSavedAt] = useState<string | null>(null);
 
   const setSession = useCallback((next: SessionData | null) => {
     sessionRef.current = next;
     setSessionState(next);
   }, []);
 
+  // A fresh profile from the website: show it, and keep a copy for next time
   const setProfile = useCallback((next: MemberProfile | null) => {
     setProfileState(next);
-    saveProfile(next);
+    setProfileStale(false);
+    setIsOffline(false);
+    // When it's from - shown if Show Choir can't be reached later on
+    setProfileSavedAt(next ? new Date().toISOString() : null);
+    saveProfile(next, sessionRef.current?.refreshToken);
   }, []);
 
-  // Restore a previously persisted session on app start.
-  useEffect(() => {
-    const restoreSession = async () => {
-      const [accessToken, refreshToken] = await Promise.all([
-        tokenStorage.getItem(ACCESS_TOKEN_KEY),
-        tokenStorage.getItem(REFRESH_TOKEN_KEY),
-      ]).catch(() => [null, null]);
-      if (!accessToken || !refreshToken) return;
-
-      try {
-        let currentToken = accessToken;
-        let memberProfile: MemberProfile;
-        try {
-          memberProfile = await fetchProfile(currentToken);
-        } catch (error) {
-          if (!axios.isAxiosError(error) || error.response?.status !== 401) {
-            throw error;
-          }
-          // Access token expired while the app was closed (they only last
-          // ~15 min) - swap the refresh token for a new one and try again.
-          const { data } = await api.post<{ accessToken: string }>(
-            '/api/auth/refresh',
-            { refreshToken }
-          );
-          currentToken = data.accessToken;
-          await tokenStorage.setItem(ACCESS_TOKEN_KEY, currentToken);
-          memberProfile = await fetchProfile(currentToken);
-        }
-        setSession({ accessToken: currentToken, refreshToken });
-        setProfile(memberProfile);
-      } catch (error) {
-        if (isRejected(error)) {
-          // The server turned the saved login down (e.g. the 30-day refresh
-          // token expired) - forget it, they'll log in again
-          await tokenStorage.deleteItem(ACCESS_TOKEN_KEY);
-          await tokenStorage.deleteItem(REFRESH_TOKEN_KEY);
-          saveProfile(null);
-          return;
-        }
-        // No signal (or the website's down): carry on logged in with the
-        // saved login and the last profile we had, so they can still show
-        // their membership card at the door. Tried again below.
-        setSession({ accessToken, refreshToken });
-        setProfileState(await loadSavedProfile());
-        setProfileStale(true);
-      }
-    };
-
-    restoreSession().finally(() => setIsLoading(false));
-  }, [setSession, setProfile]);
+  // Still the same login as when something started? (A reply that arrives
+  // after they've logged out - or someone else has logged in on the same
+  // phone - must be ignored.)
+  const isStillLoggedInAs = (refreshToken: string) =>
+    sessionRef.current?.refreshToken === refreshToken;
 
   const signIn: AuthContextType['signIn'] = async (formData) => {
     const email = formData.email.trim().toLowerCase();
@@ -257,9 +287,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
       await tokenStorage.setItem(ACCESS_TOKEN_KEY, data.accessToken);
       await tokenStorage.setItem(REFRESH_TOKEN_KEY, data.refreshToken);
 
+      refreshing.current = null;
+      refreshingFor.current = null;
       setSession(data);
       setProfile(memberProfile);
-      setProfileStale(false);
 
       return { success: true };
     } catch (error) {
@@ -286,11 +317,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
           // Offline or an older website - nothing more to do
         });
     }
-    await tokenStorage.deleteItem(ACCESS_TOKEN_KEY);
-    await tokenStorage.deleteItem(REFRESH_TOKEN_KEY);
+    // Forget the session first, so any reply still on its way is ignored
+    refreshing.current = null;
+    refreshingFor.current = null;
     setSession(null);
     setProfile(null);
-    setProfileStale(false);
+    await tokenStorage.deleteItem(ACCESS_TOKEN_KEY);
+    await tokenStorage.deleteItem(REFRESH_TOKEN_KEY);
     router.replace('/login');
   }, [setSession, setProfile]);
 
@@ -298,36 +331,43 @@ export function AuthProvider({ children }: PropsWithChildren) {
     const current = sessionRef.current;
     if (!current) return null;
     if (!refreshing.current) {
+      refreshingFor.current = current.refreshToken;
       refreshing.current = (async () => {
         try {
           const { data } = await api.post<{ accessToken: string }>(
             '/api/auth/refresh',
             { refreshToken: current.refreshToken }
           );
-          await tokenStorage.setItem(ACCESS_TOKEN_KEY, data.accessToken);
-          // Unless they logged out meanwhile
-          if (sessionRef.current) {
-            setSession({
-              ...sessionRef.current,
-              accessToken: data.accessToken,
-            });
+          // A wifi sign-in page can answer instead - not a token
+          if (typeof data?.accessToken !== 'string') {
+            throw new Error('Unexpected reply instead of a token');
           }
+          // Logged out (or someone else logged in) meanwhile - not theirs
+          if (!isStillLoggedInAs(current.refreshToken)) return null;
+          await tokenStorage.setItem(ACCESS_TOKEN_KEY, data.accessToken);
+          setSession({ ...current, accessToken: data.accessToken });
           return data.accessToken;
         } catch (error) {
-          // Only a "no" from the website logs them out. No signal or a
-          // timeout (bad hall wifi) leaves them logged in - the request that
-          // needed the token fails, and the next one tries again.
+          // Only a "no" from the website logs them out - and only if it's
+          // still the login it was about. No signal or a timeout (bad hall
+          // wifi) leaves them logged in: the request that needed the token
+          // fails, and the next one tries again.
           if (isRejected(error)) {
-            await signOut();
+            if (isStillLoggedInAs(current.refreshToken)) await signOut();
             return null;
           }
           throw error;
         } finally {
-          refreshing.current = null;
+          // (Unless a new login has started its own meanwhile)
+          if (refreshingFor.current === current.refreshToken) {
+            refreshing.current = null;
+            refreshingFor.current = null;
+          }
         }
       })();
     }
     return refreshing.current;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setSession, signOut]);
 
   const authRequest = useCallback(
@@ -362,18 +402,102 @@ export function AuthProvider({ children }: PropsWithChildren) {
   );
 
   const refreshProfile = useCallback(async () => {
-    if (!sessionRef.current) return;
+    const current = sessionRef.current;
+    if (!current) return 'signedOut' as const;
     try {
-      setProfile(
+      const fresh = checkProfile(
         await authRequest<MemberProfile>({
           url: '/api/member-resources/get-profile',
         })
       );
-      setProfileStale(false);
-    } catch {
-      // Offline, timeout, etc - keep showing the profile we have.
+      // Only if it's still the same login
+      if (isStillLoggedInAs(current.refreshToken)) setProfile(fresh);
+      return 'ok' as const;
+    } catch (error) {
+      if (!isStillLoggedInAs(current.refreshToken)) return 'signedOut' as const;
+      // The website says their account's gone - log out. (A login the
+      // website turns down has already been logged out by the refresh.)
+      if (isMemberGone(error)) {
+        await signOut();
+        return 'signedOut' as const;
+      }
+      if (!sessionRef.current) return 'signedOut' as const;
+      // Offline, timeout, website down etc: keep showing what we have
+      setIsOffline(true);
+      return 'offline' as const;
     }
-  }, [authRequest, setProfile]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authRequest, setProfile, signOut]);
+
+  // Restore a previously persisted session on app start.
+  useEffect(() => {
+    const restoreSession = async () => {
+      const [accessToken, refreshToken] = await Promise.all([
+        tokenStorage.getItem(ACCESS_TOKEN_KEY),
+        tokenStorage.getItem(REFRESH_TOKEN_KEY),
+      ]).catch(() => [null, null]);
+      if (!accessToken || !refreshToken) return;
+
+      // Saved profile for this login: show it straight away (the
+      // membership card at the door shouldn't wait for hall wifi), and check
+      // with the website in the background
+      const saved = await loadSavedProfile(refreshToken);
+      if (saved) {
+        setSession({ accessToken, refreshToken });
+        setProfileState(saved.profile);
+        setProfileSavedAt(saved.savedAt);
+        setProfileStale(true);
+        setIsLoading(false);
+        refreshProfile();
+        return;
+      }
+
+      // Nothing saved yet (e.g. the first start after updating) - wait for
+      // the website
+      try {
+        let currentToken = accessToken;
+        let memberProfile: MemberProfile;
+        try {
+          memberProfile = checkProfile(await fetchProfile(currentToken));
+        } catch (error) {
+          if (!axios.isAxiosError(error) || error.response?.status !== 401) {
+            throw error;
+          }
+          // Access token expired while the app was closed (they only last
+          // ~15 min) - swap the refresh token for a new one and try again.
+          const { data } = await api.post<{ accessToken: string }>(
+            '/api/auth/refresh',
+            { refreshToken }
+          );
+          if (typeof data?.accessToken !== 'string') {
+            throw new Error('Unexpected reply instead of a token');
+          }
+          currentToken = data.accessToken;
+          await tokenStorage.setItem(ACCESS_TOKEN_KEY, currentToken);
+          memberProfile = checkProfile(await fetchProfile(currentToken));
+        }
+        setSession({ accessToken: currentToken, refreshToken });
+        setProfile(memberProfile);
+      } catch (error) {
+        if (isRejected(error) || isMemberGone(error)) {
+          // The server turned the saved login down (e.g. the 30-day refresh
+          // token expired, or the member's gone) - forget it, they'll log in
+          // again
+          await tokenStorage.deleteItem(ACCESS_TOKEN_KEY);
+          await tokenStorage.deleteItem(REFRESH_TOKEN_KEY);
+          saveProfile(null);
+          return;
+        }
+        // No signal (or the website's down): carry on logged in, with no
+        // profile yet - tried again below
+        setSession({ accessToken, refreshToken });
+        setProfileStale(true);
+        setIsOffline(true);
+      }
+    };
+
+    restoreSession().finally(() => setIsLoading(false));
+  }, [setSession, setProfile, refreshProfile]);
 
   // Refresh the profile whenever the app comes back to the foreground, so a
   // member sees their updated flexi count after being scanned in.
@@ -386,13 +510,16 @@ export function AuthProvider({ children }: PropsWithChildren) {
     return () => subscription.remove();
   }, []);
 
-  // Opened with no signal: keep trying every 20 seconds until the website
-  // answers, so it catches up by itself once they're back in signal
+  // Showing saved details: keep trying every 20 seconds (while the app's
+  // open) until the website answers, so it catches up by itself once
+  // they're back in signal
   useEffect(() => {
-    if (!profileStale) return undefined;
-    const timer = setInterval(refreshProfile, 20_000);
+    if (!profileStale && !isOffline) return undefined;
+    const timer = setInterval(() => {
+      if (AppState.currentState === 'active') refreshProfile();
+    }, 20_000);
     return () => clearInterval(timer);
-  }, [profileStale, refreshProfile]);
+  }, [profileStale, isOffline, refreshProfile]);
 
   return (
     <AuthContext.Provider
@@ -402,6 +529,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
         refreshAccessToken,
         authRequest,
         refreshProfile,
+        isOffline,
+        profileSavedAt,
         session,
         profile,
         isLoading,

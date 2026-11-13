@@ -25,7 +25,7 @@ import { setAudioModeAsync, useAudioPlayer } from 'expo-audio';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useFocusEffect, useIsFocused } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { AppState, Linking, Pressable, Text, View } from 'react-native';
 
 import {
   MemberSearch,
@@ -219,7 +219,15 @@ const ScanScreen = () => {
   // The rehearsal we're scanning people into (picked in the VenueBar)
   const { venue, today } = useRehearsal();
   // null while loading, then { granted: true/false }
-  const [permission, requestPermission] = useCameraPermissions();
+  const [permission, requestPermission, getPermission] = useCameraPermissions();
+  // Back from the phone's Settings: Android doesn't restart the app when the
+  // camera's turned on there, so look again
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') getPermission();
+    });
+    return () => subscription.remove();
+  }, [getPermission]);
   // false when the GA is on another tab - used to switch the camera off
   const isFocused = useIsFocused();
   // The result currently on screen, or null to show the "point the camera" hint
@@ -285,12 +293,21 @@ const ScanScreen = () => {
 
   // --- Showing a result ---
 
-  // Shown when the website can't be reached or errors
-  const couldNotCheck: ScanToast = {
-    variant: 'error',
-    title: "Couldn't check member",
-    message: 'Please try again',
-  };
+  // Shown when the website can't be reached or errors. No answer at all
+  // (no signal, or it timed out) says so - scanning again is safe, as a
+  // member can't be checked in twice.
+  const couldNotCheck = (error: unknown): ScanToast =>
+    axios.isAxiosError(error) && !error.response
+      ? {
+          variant: 'error',
+          title: 'No signal',
+          message: "Couldn't tell if they're checked in - scan again to check",
+        }
+      : {
+          variant: 'error',
+          title: "Couldn't check member",
+          message: 'Please try again',
+        };
 
   // Shows the toast (with a ting if they're allowed in), then clears it and
   // allows the next scan.
@@ -300,10 +317,21 @@ const ScanScreen = () => {
       ting.play();
     }
     setToast(result);
+    // One to act on stays until it's tapped (closeToast)
+    if (result.sticky) return;
     resetTimer.current = setTimeout(() => {
       setToast(null);
       isBusy.current = false;
     }, RESULT_DISPLAY_MS);
+  };
+
+  // OK on a message that waits for it. (Only those - a late second tap on a
+  // fading one mustn't release a scan that's under way.)
+  const closeToast = () => {
+    if (!toast?.sticky) return;
+    if (resetTimer.current) clearTimeout(resetTimer.current);
+    setToast(null);
+    isBusy.current = false;
   };
 
   // --- Is the GA checked in here themselves? ---
@@ -380,9 +408,9 @@ const ScanScreen = () => {
         toToast(response),
         ['mandate', 'ga', 'flexi'].includes(response.status)
       );
-    } catch {
+    } catch (error) {
       // Couldn't reach the website, or it errored.
-      showResult(couldNotCheck, false);
+      showResult(couldNotCheck(error), false);
     }
   };
 
@@ -500,9 +528,22 @@ const ScanScreen = () => {
         toPaymentToast(response, payment),
         ['paid', 'pay_later', 'not_paid'].includes(response.status)
       );
-    } catch {
-      // Nothing was recorded - they can be scanned again.
-      showResult(couldNotCheck, false);
+    } catch (error) {
+      // No answer (no signal / timed out): the website may still have saved
+      // it, so say so rather than inviting a second payment. Otherwise
+      // nothing was recorded - they can be scanned again.
+      showResult(
+        axios.isAxiosError(error) && !error.response
+          ? {
+              variant: 'error',
+              title: 'Payment not confirmed',
+              message:
+                "No signal - it may have gone through. Don't take payment again; check Who's here once you have signal",
+              sticky: true,
+            }
+          : couldNotCheck(error),
+        false
+      );
     } finally {
       // Close the drawer either way; showResult re-enables scanning.
       setIsSaving(false);
@@ -548,12 +589,24 @@ const ScanScreen = () => {
         <Text className="text-center text-lg text-white">
           The camera is needed to scan members&apos; QR codes.
         </Text>
+        {/* Once it's been refused the phone won't ask again - only the
+            phone's Settings can turn it back on */}
         <Pressable
-          onPress={requestPermission}
+          onPress={
+            permission.canAskAgain ? requestPermission : Linking.openSettings
+          }
+          accessibilityRole="button"
           className="mt-6 rounded-md bg-lightGold px-6 py-3"
         >
-          <Text className="text-lg font-bold">Allow camera</Text>
+          <Text className="text-lg font-bold">
+            {permission.canAskAgain ? 'Allow camera' : 'Open Settings'}
+          </Text>
         </Pressable>
+        {permission.canAskAgain ? null : (
+          <Text className="mt-4 text-center text-gray-300">
+            Turn on Camera for Show Choir, then come back here.
+          </Text>
+        )}
       </View>
     );
   }
@@ -604,7 +657,7 @@ const ScanScreen = () => {
             </Pressable>
           ) : null}
           {toast ? (
-            <ScanResultToast {...toast} />
+            <ScanResultToast {...toast} onClose={closeToast} />
           ) : (
             <Text className="rounded-lg bg-black/60 px-4 py-3 text-center text-base text-white">
               {venue

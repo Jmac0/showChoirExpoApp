@@ -287,7 +287,7 @@ const WhosHereScreen = () => {
           }
           ListFooterComponent={
             visible.length ? (
-              <Text className="mb-8 mt-4 text-center text-xs text-gray-500">
+              <Text className="mb-8 mt-4 text-center text-xs text-gray-400">
                 Long-press a name to undo a check-in
               </Text>
             ) : undefined

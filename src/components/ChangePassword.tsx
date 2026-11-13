@@ -61,7 +61,7 @@ export function ChangePassword() {
       });
       showMessage(
         'Password changed',
-        'Use your new password next time you log in. Any other phones have been logged out.'
+        "Use your new password next time you log in. You've been logged out on your other phones and computers."
       );
       close();
     } catch (error) {

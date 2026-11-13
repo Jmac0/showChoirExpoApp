@@ -17,7 +17,9 @@ export default function Login() {
 
   useEffect(() => {
     if (session) {
-      router.push('/');
+      // Replace, not push - so Android's back button on Home doesn't go
+      // back to the login screen
+      router.replace('/');
     }
   }, [session, router]);
 

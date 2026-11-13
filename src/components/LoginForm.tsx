@@ -139,9 +139,15 @@ const LoginForm = ({
           }
           accessibilityRole="link"
           hitSlop={8}
-          className="mt-2"
+          className="mt-2 self-stretch"
         >
-          <Text className="text-center text-base font-bold text-lightGold underline">
+          {/* Full width + "simple" line breaking: some Android phones (e.g.
+              Motorola) draw bold text wider than it was measured, which cut
+              off the last word ("taster") when the link hugged its text */}
+          <Text
+            textBreakStrategy="simple"
+            className="text-center text-base font-bold text-lightGold underline"
+          >
             Join or book a free taster
           </Text>
         </Pressable>

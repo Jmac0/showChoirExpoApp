@@ -207,13 +207,15 @@ const ShopScreen = () => {
 
         {/* --- Their orders --- */}
         {shop?.orders.length ? (
-          <View className="mt-4 w-11/12">
+          // One grey panel holding the header and the orders, so the orders
+          // sit inside "Your orders" rather than under it (as on the website)
+          <View className="mt-4 w-11/12 overflow-hidden rounded-xl border border-lightGold/60 bg-[rgb(58,59,64)]">
             {/* Tap to open / fold away */}
             <Pressable
               onPress={() => setOrdersOpen((open) => !open)}
               accessibilityRole="button"
               accessibilityState={{ expanded: ordersOpen }}
-              className="mb-3 flex-row items-center justify-between rounded-xl border border-lightGold/60 px-4 py-3 active:opacity-70"
+              className="flex-row items-center justify-between px-4 py-3 active:opacity-70"
             >
               <Text className="text-xl font-bold text-lightGold">
                 Your orders ({shop.orders.length})
@@ -228,7 +230,7 @@ const ShopScreen = () => {
               (order) => (
                 <View
                   key={order.id}
-                  className="mb-3 rounded-xl border border-lightGold/60 p-4"
+                  className="mx-4 mb-3 rounded-xl border border-lightGold/60 bg-lightBlack p-4"
                 >
                   <View className="flex-row items-center justify-between">
                     <Text className="font-bold text-white">
@@ -264,7 +266,7 @@ const ShopScreen = () => {
               <Pressable
                 onPress={() => setOrdersShown((shown) => shown + ORDERS_PAGE)}
                 accessibilityRole="button"
-                className="mt-1 items-center rounded-full border border-lightGold py-3 active:opacity-70"
+                className="mx-4 mb-4 items-center rounded-full border border-lightGold py-3 active:opacity-70"
               >
                 <Text className="w-full text-center font-bold text-lightGold">
                   Load more ({shop.orders.length - ordersShown} older)

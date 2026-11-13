@@ -10,6 +10,7 @@
     "lint": "eslint ./src --ext .ts,.tsx"
   },
   "dependencies": {
+    "@expo-google-fonts/courgette": "^0.4.1",
     "@expo/vector-icons": "^15.0.3",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@stripe/stripe-react-native": "0.81.0",

@@ -45,6 +45,17 @@ const TabsLayout = () => {
         screenOptions={{
           tabBarActiveTintColor: LIGHT_GOLD,
           headerStyle: { backgroundColor: LIGHT_GOLD },
+          // Screen name in the middle, in Courgette (loaded in app/_layout)
+          headerTitleAlign: 'center',
+          headerTitleStyle: {
+            fontFamily: 'Courgette_400Regular',
+            fontSize: 24,
+            // Courgette sits low: a taller line so the tails of g, p, y
+            // aren't cut, and nudged up for a little space underneath. (Not
+            // a margin - Android shrinks the title to fit it and cuts it off.)
+            lineHeight: 34,
+            transform: [{ translateY: -6 }],
+          },
           // GA / admin screens are in a menu (top left) instead of the tab
           // bar, so it isn't crowded - only shown to those who have any.
           // Left, so it's well away from the Shop's cart button (top right).

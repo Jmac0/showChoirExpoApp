@@ -31,7 +31,7 @@ const TabsLayout = () => {
     return <Redirect href="/login" />;
   }
 
-  // Announcements and Music & Lyrics are for active members only - hidden
+  // Announcements, Music & Lyrics and the Shop are for active members only - hidden
   // when the website says their membership isn't active (Direct Debit
   // stopped over 14 days ago, or Flexi sessions expired). An older website
   // doesn't say, so show them.
@@ -45,9 +45,10 @@ const TabsLayout = () => {
         screenOptions={{
           tabBarActiveTintColor: LIGHT_GOLD,
           headerStyle: { backgroundColor: LIGHT_GOLD },
-          // GA / admin screens are in a menu (top right) instead of the tab
-          // bar, so it isn't crowded - only shown to those who have any
-          headerRight: () => <StaffMenu />,
+          // GA / admin screens are in a menu (top left) instead of the tab
+          // bar, so it isn't crowded - only shown to those who have any.
+          // Left, so it's well away from the Shop's cart button (top right).
+          headerLeft: () => <StaffMenu />,
         }}
       >
         <Tabs.Screen
@@ -120,6 +121,20 @@ const TabsLayout = () => {
             tabBarIcon: ({ color, focused }) => (
               <TabBarIcon
                 name={focused ? 'musical-note' : 'musical-note-outline'}
+                color={color}
+              />
+            ),
+          }}
+        />
+        {/* Kit shop - active members only, like Resources */}
+        <Tabs.Screen
+          name="shop"
+          options={{
+            title: 'Shop',
+            href: isActiveMember ? undefined : null,
+            tabBarIcon: ({ color, focused }) => (
+              <TabBarIcon
+                name={focused ? 'bag-handle' : 'bag-handle-outline'}
                 color={color}
               />
             ),

@@ -50,7 +50,7 @@ const ITEMS: {
 export const staffMenuItems = (role?: string) =>
   ITEMS.filter((item) => !!role && item.roles.includes(role));
 
-// Menu button (top right of the header) and the drawer it opens, holding
+// Menu button (top left of the header) and the drawer it opens, holding
 // the GA and admin screens - so they don't crowd the tab bar at the bottom.
 // Only shown to members who have something in it.
 export function StaffMenu() {
@@ -75,7 +75,7 @@ export function StaffMenu() {
         hitSlop={10}
         accessibilityRole="button"
         accessibilityLabel="Staff menu"
-        className="mr-4"
+        className="ml-4"
       >
         <Ionicons name="menu" size={28} color="black" />
       </Pressable>
@@ -87,14 +87,7 @@ export function StaffMenu() {
         onRequestClose={() => setIsOpen(false)}
       >
         <View className="flex-1 flex-row">
-          {/* Tap the dimmed area to close */}
-          <Pressable
-            className="flex-1 bg-black/60"
-            onPress={() => setIsOpen(false)}
-            accessibilityLabel="Close menu"
-          />
-
-          {/* The drawer, on the right under the menu button */}
+          {/* The drawer, on the left under the menu button */}
           <View
             className="w-72 bg-lightBlack"
             style={{
@@ -133,6 +126,13 @@ export function StaffMenu() {
               );
             })}
           </View>
+
+          {/* Tap the dimmed area to close */}
+          <Pressable
+            className="flex-1 bg-black/60"
+            onPress={() => setIsOpen(false)}
+            accessibilityLabel="Close menu"
+          />
         </View>
       </Modal>
     </>

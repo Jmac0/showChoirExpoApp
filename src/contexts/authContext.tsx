@@ -275,6 +275,17 @@ export function AuthProvider({ children }: PropsWithChildren) {
   };
 
   const signOut = useCallback(async () => {
+    // Tell the website this phone's login is finished, so the saved token
+    // can't be used again. Not waited for - with no signal they're still
+    // logged out here, and the token runs out by itself after 30 days.
+    const refreshToken = sessionRef.current?.refreshToken;
+    if (refreshToken) {
+      api
+        .post('/api/auth/appLogout', { refreshToken }, { timeout: 5000 })
+        .catch(() => {
+          // Offline or an older website - nothing more to do
+        });
+    }
     await tokenStorage.deleteItem(ACCESS_TOKEN_KEY);
     await tokenStorage.deleteItem(REFRESH_TOKEN_KEY);
     setSession(null);

@@ -54,7 +54,9 @@
           "disableSPM": true
         }
       ],
-      "./plugins/withStripeAndroidFixes"
+      "./plugins/withStripeAndroidFixes",
+      "expo-sharing",
+      "expo-status-bar"
     ],
     "ios": {
       "bundleIdentifier": "co.uk.show-choir.showchoir",
@@ -74,6 +76,12 @@
         "projectId": "187baa39-52a3-4bca-a399-9a62ac144030"
       }
     },
-    "owner": "jmac0"
+    "owner": "jmac0",
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/187baa39-52a3-4bca-a399-9a62ac144030"
+    }
   }
 }
